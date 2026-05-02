@@ -2,7 +2,11 @@ import { createClient } from "@supabase/supabase-js";
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
-const FREE_LIMIT = 10; // テスト用（後で30に戻す）
+const PLAN_LIMITS: Record<string, number> = {
+  free: 10,
+  basic: 500,
+  pro: 5000,
+};
 
 function getSupabase() {
   return createClient(
@@ -19,7 +23,17 @@ export async function GET() {
 
   const supabase = getSupabase();
 
-  // 今月の開始日（UTC）
+  // ユーザーのプランを取得
+  const { data: userData } = await supabase
+    .from("users")
+    .select("plan")
+    .eq("id", userId)
+    .single();
+
+  const plan = userData?.plan ?? "free";
+  const limit = PLAN_LIMITS[plan] ?? 10;
+
+  // 今月の変換枚数を取得
   const now = new Date();
   const startOfMonth = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1));
 
@@ -38,36 +52,8 @@ export async function GET() {
 
   return NextResponse.json({
     used,
-    limit: FREE_LIMIT,
-    remaining: Math.max(0, FREE_LIMIT - used),
+    limit,
+    remaining: Math.max(0, limit - used),
+    plan,
   });
-}
-
-export async function POST() {
-  const { userId } = await auth();
-  if (!userId) {
-    return NextResponse.json({ error: "未認証です" }, { status: 401 });
-  }
-
-  const supabase = getSupabase();
-
-  const now = new Date();
-  const startOfMonth = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1));
-
-  const { count } = await supabase
-    .from("conversions")
-    .select("*", { count: "exact", head: true })
-    .eq("user_id", userId)
-    .gte("created_at", startOfMonth.toISOString());
-
-  if ((count ?? 0) >= FREE_LIMIT) {
-    return NextResponse.json(
-      { error: "今月の無料枠を使い切りました" },
-      { status: 403 }
-    );
-  }
-
-  await supabase.from("conversions").insert({ user_id: userId });
-
-  return NextResponse.json({ success: true });
 }

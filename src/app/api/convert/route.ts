@@ -5,12 +5,18 @@ import { createClient } from "@supabase/supabase-js";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+}
 
-const FREE_LIMIT = 10;
+const PLAN_LIMITS: Record<string, number> = {
+  free: 10,
+  basic: 500,
+  pro: 5000,
+};
 
 const SYSTEM_PROMPT = `あなたは数式OCRの専門家です。
 画像に含まれる数式・テキストをLaTeXに変換してください。
@@ -26,19 +32,26 @@ const SYSTEM_PROMPT = `あなたは数式OCRの専門家です。
 
 export async function POST(req: NextRequest) {
   try {
-    // 認証チェック
     const { userId } = await auth();
     if (!userId) {
-      return NextResponse.json(
-        { error: "ログインが必要です" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "ログインが必要です" }, { status: 401 });
     }
 
+    const supabase = getSupabase();
+
+    // ユーザーのプランを取得
+    const { data: userData } = await supabase
+      .from("users")
+      .select("plan")
+      .eq("id", userId)
+      .single();
+
+    const plan = userData?.plan ?? "free";
+    const limit = PLAN_LIMITS[plan] ?? 10;
+
     // 今月の変換枚数チェック
-    const startOfMonth = new Date();
-    startOfMonth.setDate(1);
-    startOfMonth.setHours(0, 0, 0, 0);
+    const now = new Date();
+    const startOfMonth = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1));
 
     const { count } = await supabase
       .from("conversions")
@@ -46,9 +59,9 @@ export async function POST(req: NextRequest) {
       .eq("user_id", userId)
       .gte("created_at", startOfMonth.toISOString());
 
-    if ((count ?? 0) >= FREE_LIMIT) {
+    if ((count ?? 0) >= limit) {
       return NextResponse.json(
-        { error: "今月の無料枠（10枚）を使い切りました。有料プランへのアップグレードをご検討ください。" },
+        { error: `今月の変換枚数（${limit}枚）を使い切りました。プランのアップグレードをご検討ください。` },
         { status: 403 }
       );
     }
@@ -68,7 +81,6 @@ export async function POST(req: NextRequest) {
     const bytes = await file.arrayBuffer();
     const base64 = Buffer.from(bytes).toString("base64");
 
-    // Gemini API呼び出し
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const result = await model.generateContent([
@@ -86,7 +98,7 @@ export async function POST(req: NextRequest) {
     // 変換履歴を記録
     await supabase.from("conversions").insert({ user_id: userId });
 
-    return NextResponse.json({ latex });
+    return NextResponse.json({ latex, plan, limit });
 
   } catch (error: any) {
     console.error(error);
