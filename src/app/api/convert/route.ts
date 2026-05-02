@@ -1,7 +1,4 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextRequest, NextResponse } from "next/server";
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 const SYSTEM_PROMPT = `あなたは数式OCRの専門家です。
 画像に含まれる数式・テキストをLaTeXに変換してください。
@@ -29,25 +26,45 @@ export async function POST(req: NextRequest) {
     const bytes = await file.arrayBuffer();
     const base64 = Buffer.from(bytes).toString("base64");
 
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-
-    const result = await model.generateContent([
-      SYSTEM_PROMPT,
-      {
-        inlineData: {
-          mimeType: file.type as "image/jpeg" | "image/png" | "image/webp",
-          data: base64,
-        },
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        "Content-Type": "application/json",
       },
-    ]);
+      body: JSON.stringify({
+        model: "baidu/qianfan-ocr-fast:free",
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "text", text: SYSTEM_PROMPT },
+              {
+                type: "image_url",
+                image_url: {
+                  url: `data:${file.type};base64,${base64}`,
+                },
+              },
+            ],
+          },
+        ],
+      }),
+    });
 
-    const latex = result.response.text().trim();
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error(data);
+      throw new Error(data.error?.message || "変換に失敗しました");
+    }
+
+    const latex = data.choices[0].message.content.trim();
     return NextResponse.json({ latex });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error(error);
     return NextResponse.json(
-      { error: "変換に失敗しました。もう一度お試しください。" },
+      { error: error.message || "変換に失敗しました。もう一度お試しください。" },
       { status: 500 }
     );
   }
