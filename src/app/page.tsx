@@ -1,5 +1,5 @@
 "use client";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
 import { Toaster, toast } from "sonner";
 import { UserButton, SignInButton, useUser } from "@clerk/nextjs";
@@ -10,6 +10,15 @@ export default function Home() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [latex, setLatex] = useState("");
   const [loading, setLoading] = useState(false);
+  const [usage, setUsage] = useState<{ used: number; limit: number; remaining: number } | null>(null);
+
+  // 変換枚数を取得
+  useEffect(() => {
+    if (!isSignedIn) return;
+    fetch("/api/usage")
+      .then((r) => r.json())
+      .then(setUsage);
+  }, [isSignedIn]);
 
   const onDrop = useCallback((files: File[]) => {
     const file = files[0];
@@ -39,6 +48,10 @@ export default function Home() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       setLatex(data.latex);
+      // 変換後に枚数を更新
+      fetch("/api/usage")
+        .then((r) => r.json())
+        .then(setUsage);
     } catch (e: any) {
       toast.error(e.message || "変換に失敗しました");
     } finally {
@@ -61,10 +74,20 @@ export default function Home() {
           <h1 className="text-3xl font-bold mb-2">数式 → LaTeX 変換</h1>
           <p className="text-gray-400">日本語テキスト・数式の混在画像に対応</p>
         </div>
-        <div>
+        <div className="flex items-center gap-4">
+          {isSignedIn && usage && (
+            <div className="text-sm text-right">
+              <div className="text-gray-400">今月の変換枚数</div>
+              <div className={`font-bold ${usage.remaining <= 5 ? "text-red-400" : "text-blue-400"}`}>
+                {usage.used} / {usage.limit} 枚
+              </div>
+            </div>
+          )}
           {isSignedIn ? (
             <div className="flex items-center gap-3">
-              <span className="text-sm text-gray-400">{user.emailAddresses[0].emailAddress}</span>
+              <span className="text-sm text-gray-400">
+                {user.emailAddresses[0].emailAddress}
+              </span>
               <UserButton />
             </div>
           ) : (
@@ -102,14 +125,20 @@ export default function Home() {
 
           <button
             onClick={convert}
-            disabled={!imageFile || loading}
+            disabled={!imageFile || loading || (usage?.remaining === 0)}
             className="w-full mt-4 py-3 rounded-xl font-bold text-white
               bg-blue-600 hover:bg-blue-500
               disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed
               transition"
           >
-            {loading ? "変換中..." : "LaTeX に変換"}
+            {loading ? "変換中..." : usage?.remaining === 0 ? "無料枠を使い切りました" : "LaTeX に変換"}
           </button>
+
+          {usage?.remaining === 0 && (
+            <p className="text-center text-sm text-red-400 mt-2">
+              今月の無料枠（10枚）を使い切りました
+            </p>
+          )}
         </div>
 
         {/* 右：LaTeX出力 */}
