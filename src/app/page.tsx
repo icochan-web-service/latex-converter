@@ -135,9 +135,21 @@ export default function Home() {
           </button>
 
           {usage?.remaining === 0 && (
-            <p className="text-center text-sm text-red-400 mt-2">
-              今月の無料枠（10枚）を使い切りました
-            </p>
+            <div className="text-center mt-2">
+              <p className="text-sm text-red-400 mb-2">
+                今月の無料枠（10枚）を使い切りました
+              </p>
+              <button
+                onClick={async () => {
+                  const res = await fetch("/api/checkout", { method: "POST" });
+                  const data = await res.json();
+                  if (data.url) window.location.href = data.url;
+                }}
+                className="bg-yellow-500 hover:bg-yellow-400 text-black px-6 py-2 rounded-lg text-sm font-bold transition"
+              >
+                Basicプランにアップグレード（¥500/月）
+              </button>
+            </div>
           )}
         </div>
 

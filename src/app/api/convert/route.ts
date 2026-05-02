@@ -10,7 +10,7 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-const FREE_LIMIT = 10;
+const FREE_LIMIT = 1;
 
 const SYSTEM_PROMPT = `あなたは数式OCRの専門家です。
 画像に含まれる数式・テキストをLaTeXに変換してください。
