@@ -107,55 +107,20 @@ export default function CompilePage() {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
-  // PNGエクスポート
+  // PNGエクスポート（html2canvasでDOMをそのままキャプチャ）
   const exportPNG = async () => {
-    if (!katexCSSRef.current) {
-      alert('CSSを読み込み中です。しばらく待ってから再試行してください。');
-      return;
-    }
-    const previewEl = document.getElementById('katex-preview-inner');
-    if (!previewEl) return;
-    const scale = 3;
-    const padding = 48;
-    const rect = previewEl.getBoundingClientRect();
-    const w = Math.max(rect.width + padding * 2, 200);
-    const h = Math.max(rect.height + padding * 2, 100);
-
-    const canvas = document.createElement('canvas');
-    canvas.width = Math.round(w * scale);
-    canvas.height = Math.round(h * scale);
-    const ctx = canvas.getContext('2d')!;
-    ctx.scale(scale, scale);
-
-    if (currentBg === 'white') {
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, w, h);
-    } else if (currentBg === 'dark') {
-      ctx.fillStyle = '#0f0f14';
-      ctx.fillRect(0, 0, w, h);
-    } else {
-      const cs = 8;
-      for (let x = 0; x < w; x += cs) {
-        for (let y = 0; y < h; y += cs) {
-          ctx.fillStyle =
-            (Math.floor(x / cs) + Math.floor(y / cs)) % 2 === 0 ? '#e0e0e0' : '#ffffff';
-          ctx.fillRect(x, y, cs, cs);
-        }
-      }
-    }
-
-    const svgString = buildSVGString(w, h, padding);
-    const blob = new Blob([svgString], { type: 'image/svg+xml' });
-    const url = URL.createObjectURL(blob);
-    const img = new Image();
-    await new Promise<void>((resolve, reject) => {
-      img.onload = () => resolve();
-      img.onerror = reject;
-      img.src = url;
+    const areaEl = document.getElementById('katex-preview-area');
+    if (!areaEl) return;
+    const { default: html2canvas } = await import('html2canvas');
+    const bgColor =
+      currentBg === 'white' ? '#ffffff' :
+      currentBg === 'dark'  ? '#0f0f14' : null;
+    const canvas = await html2canvas(areaEl, {
+      scale: 3,
+      useCORS: true,
+      backgroundColor: bgColor,
+      logging: false,
     });
-    ctx.drawImage(img, 0, 0);
-    URL.revokeObjectURL(url);
-
     const link = document.createElement('a');
     link.download = 'latex-preview.png';
     link.href = canvas.toDataURL('image/png');
@@ -320,33 +285,6 @@ export default function CompilePage() {
             </div>
           </div>
 
-          {/* エクスポートボタン */}
-          <div style={{ display: 'flex', gap: '8px', marginLeft: 'auto' }}>
-            <button
-              onClick={exportSVG}
-              disabled={!rendered}
-              style={{
-                padding: '8px 16px', fontSize: '13px', fontWeight: '600', borderRadius: '4px',
-                border: `1px solid ${rendered ? '#0017C1' : '#E5E5E5'}`,
-                background: '#FFFFFF', color: rendered ? '#0017C1' : '#bbb',
-                cursor: rendered ? 'pointer' : 'not-allowed', transition: 'all 0.12s',
-              }}
-            >
-              SVG
-            </button>
-            <button
-              onClick={exportPNG}
-              disabled={!rendered}
-              style={{
-                padding: '8px 16px', fontSize: '13px', fontWeight: '600', borderRadius: '4px',
-                border: 'none', background: rendered ? '#0017C1' : '#E5E5E5',
-                color: rendered ? '#FFFFFF' : '#999',
-                cursor: rendered ? 'pointer' : 'not-allowed', transition: 'all 0.12s',
-              }}
-            >
-              PNG
-            </button>
-          </div>
         </div>
 
         {/* ─── プリセット ─── */}
@@ -382,9 +320,11 @@ export default function CompilePage() {
             border: '1px solid #E5E5E5',
             borderRadius: '8px',
             overflow: 'hidden',
+            marginBottom: '16px',
           }}
         >
           <div
+            id="katex-preview-area"
             style={{
               minHeight: '360px',
               display: 'flex',
@@ -427,6 +367,56 @@ export default function CompilePage() {
               </div>
             )}
           </div>
+        </div>
+
+        {/* ─── ダウンロードボタン ─── */}
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <button
+            onClick={exportSVG}
+            disabled={!rendered}
+            style={{
+              flex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              padding: '12px 0',
+              fontSize: '14px',
+              fontWeight: '600',
+              borderRadius: '4px',
+              border: `1px solid ${rendered ? '#0017C1' : '#E5E5E5'}`,
+              background: '#FFFFFF',
+              color: rendered ? '#0017C1' : '#bbb',
+              cursor: rendered ? 'pointer' : 'not-allowed',
+              transition: 'all 0.12s',
+            }}
+          >
+            <span style={{ fontSize: '16px' }}>↓</span>
+            SVG としてダウンロード
+          </button>
+          <button
+            onClick={exportPNG}
+            disabled={!rendered}
+            style={{
+              flex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              padding: '12px 0',
+              fontSize: '14px',
+              fontWeight: '600',
+              borderRadius: '4px',
+              border: 'none',
+              background: rendered ? '#0017C1' : '#E5E5E5',
+              color: rendered ? '#FFFFFF' : '#999',
+              cursor: rendered ? 'pointer' : 'not-allowed',
+              transition: 'all 0.12s',
+            }}
+          >
+            <span style={{ fontSize: '16px' }}>↓</span>
+            PNG としてダウンロード
+          </button>
         </div>
       </main>
 
