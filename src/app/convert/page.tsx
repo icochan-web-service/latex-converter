@@ -2,26 +2,18 @@
 import { useState, useCallback, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
 import { Toaster, toast } from "sonner";
-import { useUser } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
+import { useUser, useClerk, SignInButton } from "@clerk/nextjs";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
 export default function ConvertPage() {
   const { isSignedIn, isLoaded } = useUser();
-  const router = useRouter();
+  const { openSignIn } = useClerk();
   const [image, setImage] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [latex, setLatex] = useState("");
   const [loading, setLoading] = useState(false);
   const [usage, setUsage] = useState<{ used: number; limit: number; remaining: number } | null>(null);
-
-  // 未ログインはトップへ
-  useEffect(() => {
-    if (isLoaded && !isSignedIn) {
-      router.replace("/");
-    }
-  }, [isLoaded, isSignedIn, router]);
 
   useEffect(() => {
     if (!isSignedIn) return;
@@ -46,6 +38,10 @@ export default function ConvertPage() {
 
   const convert = async () => {
     if (!imageFile) return;
+    if (!isSignedIn) {
+      openSignIn({ fallbackRedirectUrl: "/convert" });
+      return;
+    }
     setLoading(true);
     try {
       const form = new FormData();
@@ -69,9 +65,7 @@ export default function ConvertPage() {
     toast.success("コピーしました");
   };
 
-  const isDisabled = !imageFile || loading || usage?.remaining === 0;
-
-  if (!isLoaded || !isSignedIn) return null;
+  const isDisabled = !imageFile || loading || (isSignedIn ? usage?.remaining === 0 : false);
 
   return (
     <div
@@ -88,13 +82,15 @@ export default function ConvertPage() {
       <Header />
 
       <main style={{ flex: 1, maxWidth: "1080px", width: "100%", margin: "0 auto", padding: "48px 40px" }}>
-        {/* ページタイトル + 利用状況 */}
+        {/* ページタイトル + 利用状況 / ログインCTA */}
         <div
           style={{
             display: "flex",
             justifyContent: "space-between",
             alignItems: "flex-start",
             marginBottom: "40px",
+            flexWrap: "wrap",
+            gap: "16px",
           }}
         >
           <div>
@@ -105,27 +101,47 @@ export default function ConvertPage() {
               日本語テキスト・数式の混在画像に対応
             </p>
           </div>
-          {usage && (
-            <div
-              style={{
-                background: "#F8F9FF",
-                border: "1px solid #E8EEFF",
-                borderRadius: "8px",
-                padding: "12px 20px",
-                textAlign: "right",
-              }}
-            >
-              <div style={{ fontSize: "12px", color: "#666666", marginBottom: "2px" }}>今月の変換枚数</div>
+
+          {isLoaded && (
+            isSignedIn && usage ? (
               <div
                 style={{
-                  fontSize: "18px",
-                  fontWeight: "700",
-                  color: usage.remaining <= 5 ? "#B91C1C" : "#0017C1",
+                  background: "#F8F9FF",
+                  border: "1px solid #E8EEFF",
+                  borderRadius: "8px",
+                  padding: "12px 20px",
+                  textAlign: "right",
                 }}
               >
-                {usage.used} / {usage.limit} 枚
+                <div style={{ fontSize: "12px", color: "#666666", marginBottom: "2px" }}>今月の変換枚数</div>
+                <div
+                  style={{
+                    fontSize: "18px",
+                    fontWeight: "700",
+                    color: usage.remaining <= 5 ? "#B91C1C" : "#0017C1",
+                  }}
+                >
+                  {usage.used} / {usage.limit} 枚
+                </div>
               </div>
-            </div>
+            ) : !isSignedIn ? (
+              <SignInButton mode="modal" fallbackRedirectUrl="/convert">
+                <button
+                  style={{
+                    background: "#0017C1",
+                    color: "#fff",
+                    padding: "10px 24px",
+                    borderRadius: "4px",
+                    border: "none",
+                    fontSize: "14px",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                  }}
+                >
+                  ログインして変換する
+                </button>
+              </SignInButton>
+            ) : null
           )}
         </div>
 
@@ -180,10 +196,14 @@ export default function ConvertPage() {
                 transition: "background 0.15s",
               }}
             >
-              {loading ? "変換中..." : usage?.remaining === 0 ? "無料枠を使い切りました" : "LaTeX に変換"}
+              {loading
+                ? "変換中..."
+                : isSignedIn && usage?.remaining === 0
+                ? "無料枠を使い切りました"
+                : "LaTeX に変換"}
             </button>
 
-            {usage?.remaining === 0 && (
+            {isSignedIn && usage?.remaining === 0 && (
               <div style={{ textAlign: "center", marginTop: "16px" }}>
                 <p style={{ fontSize: "13px", color: "#B91C1C", marginBottom: "10px" }}>
                   今月の無料枠（10枚）を使い切りました

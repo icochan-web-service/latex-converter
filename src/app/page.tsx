@@ -1,15 +1,26 @@
 "use client";
-import { SignInButton, useUser } from "@clerk/nextjs";
+import { useClerk, useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
+import { Toaster, toast } from "sonner";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
 export default function LandingPage() {
-  const { isSignedIn, isLoaded } = useUser();
+  const { isSignedIn } = useUser();
+  const { openSignIn } = useClerk();
   const router = useRouter();
 
-  const handleConvertClick = () => {
-    router.push("/convert");
+  const handleConvert = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (isSignedIn) {
+      router.push("/convert");
+    } else {
+      openSignIn({ fallbackRedirectUrl: "/convert" });
+    }
+  };
+
+  const handleComingSoon = () => {
+    toast.info("近日公開です。お楽しみに！");
   };
 
   return (
@@ -23,6 +34,7 @@ export default function LandingPage() {
         flexDirection: "column",
       }}
     >
+      <Toaster position="top-right" />
       <Header />
 
       {/* ヒーロー */}
@@ -58,69 +70,58 @@ export default function LandingPage() {
             gap: "24px",
           }}
         >
-          {/* カード1：画像→LaTeX */}
-          <div className="tool-card">
-            <div
-              style={{
-                width: "60px",
-                height: "60px",
-                background: "#0017C1",
-                borderRadius: "50%",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "26px",
-                margin: "0 auto 20px",
-              }}
-            >
-              📷
-            </div>
-            <h2 style={{ fontSize: "17px", fontWeight: "700", color: "#1A1A1A", marginBottom: "10px" }}>
-              画像 → LaTeX 変換
-            </h2>
-            <p style={{ fontSize: "14px", color: "#666666", lineHeight: "1.7", marginBottom: "24px" }}>
-              数式・日本語テキストの混在画像をLaTeXコードに変換
-            </p>
-            {isLoaded && (
-              isSignedIn ? (
-                <button
-                  onClick={handleConvertClick}
+          {/* カード1：画像→LaTeX（アクティブ） */}
+          <a href="/convert" className="tool-card-active" onClick={handleConvert}>
+            <div style={{ display: "flex", gap: "16px", flex: 1 }}>
+              <div
+                style={{
+                  width: "48px",
+                  height: "48px",
+                  minWidth: "48px",
+                  background: "#0017C1",
+                  borderRadius: "50%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "22px",
+                }}
+              >
+                📷
+              </div>
+              <div>
+                <h2
                   style={{
-                    background: "#0017C1",
-                    color: "#fff",
-                    padding: "10px 28px",
-                    borderRadius: "4px",
-                    border: "none",
-                    fontSize: "14px",
-                    fontWeight: "600",
-                    cursor: "pointer",
+                    fontSize: "16px",
+                    fontWeight: "700",
+                    color: "#1A1A1A",
+                    marginBottom: "8px",
+                    marginTop: 0,
                   }}
                 >
-                  変換する
-                </button>
-              ) : (
-                <SignInButton mode="modal" fallbackRedirectUrl="/convert">
-                  <button
-                    style={{
-                      background: "#0017C1",
-                      color: "#fff",
-                      padding: "10px 28px",
-                      borderRadius: "4px",
-                      border: "none",
-                      fontSize: "14px",
-                      fontWeight: "600",
-                      cursor: "pointer",
-                    }}
-                  >
-                    変換する
-                  </button>
-                </SignInButton>
-              )
-            )}
-          </div>
+                  画像 → LaTeX 変換
+                </h2>
+                <p style={{ fontSize: "13px", color: "#666666", lineHeight: "1.7", margin: 0 }}>
+                  数式・日本語テキストの混在画像をLaTeXコードに変換
+                </p>
+              </div>
+            </div>
+            <div
+              className="card-arrow"
+              style={{
+                position: "absolute",
+                bottom: "20px",
+                right: "24px",
+                color: "#0017C1",
+                fontSize: "18px",
+                fontWeight: "700",
+              }}
+            >
+              →
+            </div>
+          </a>
 
           {/* カード2：LaTeX→PDF（近日公開） */}
-          <div className="tool-card">
+          <div className="tool-card-active" onClick={handleComingSoon}>
             <span
               style={{
                 position: "absolute",
@@ -136,82 +137,89 @@ export default function LandingPage() {
             >
               近日公開
             </span>
-            <div
-              style={{
-                width: "60px",
-                height: "60px",
-                background: "#CDD3E8",
-                borderRadius: "50%",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "26px",
-                margin: "0 auto 20px",
-              }}
-            >
-              📄
+            <div style={{ display: "flex", gap: "16px", flex: 1 }}>
+              <div
+                style={{
+                  width: "48px",
+                  height: "48px",
+                  minWidth: "48px",
+                  background: "#CDD3E8",
+                  borderRadius: "50%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "22px",
+                }}
+              >
+                📄
+              </div>
+              <div>
+                <h2
+                  style={{
+                    fontSize: "16px",
+                    fontWeight: "700",
+                    color: "#1A1A1A",
+                    marginBottom: "8px",
+                    marginTop: 0,
+                  }}
+                >
+                  LaTeX → PDF コンパイル
+                </h2>
+                <p style={{ fontSize: "13px", color: "#666666", lineHeight: "1.7", margin: 0 }}>
+                  LaTeXコードをそのままPDFに変換・プレビュー
+                </p>
+              </div>
             </div>
-            <h2 style={{ fontSize: "17px", fontWeight: "700", color: "#1A1A1A", marginBottom: "10px" }}>
-              LaTeX → PDF コンパイル
-            </h2>
-            <p style={{ fontSize: "14px", color: "#666666", lineHeight: "1.7", marginBottom: "24px" }}>
-              LaTeXコードをそのままPDFに変換・プレビュー
-            </p>
-            <button
-              disabled
+            <div
+              className="card-arrow"
               style={{
-                background: "#E5E5E5",
-                color: "#999",
-                padding: "10px 28px",
-                borderRadius: "4px",
-                border: "none",
-                fontSize: "14px",
-                fontWeight: "600",
-                cursor: "not-allowed",
+                position: "absolute",
+                bottom: "20px",
+                right: "24px",
+                color: "#CDD3E8",
+                fontSize: "18px",
+                fontWeight: "700",
               }}
             >
-              準備中
-            </button>
+              →
+            </div>
           </div>
 
-          {/* カード3：将来用 */}
-          <div className="tool-card">
-            <div
-              style={{
-                width: "60px",
-                height: "60px",
-                background: "#CDD3E8",
-                borderRadius: "50%",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "26px",
-                margin: "0 auto 20px",
-              }}
-            >
-              ✨
+          {/* カード3：将来用（非アクティブ） */}
+          <div className="tool-card-inactive">
+            <div style={{ display: "flex", gap: "16px", flex: 1 }}>
+              <div
+                style={{
+                  width: "48px",
+                  height: "48px",
+                  minWidth: "48px",
+                  background: "#CDD3E8",
+                  borderRadius: "50%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "22px",
+                }}
+              >
+                ✨
+              </div>
+              <div>
+                <h2
+                  style={{
+                    fontSize: "16px",
+                    fontWeight: "700",
+                    color: "#1A1A1A",
+                    marginBottom: "8px",
+                    marginTop: 0,
+                  }}
+                >
+                  新機能を準備中
+                </h2>
+                <p style={{ fontSize: "13px", color: "#666666", lineHeight: "1.7", margin: 0 }}>
+                  さらに便利なツールを追加予定です
+                </p>
+              </div>
             </div>
-            <h2 style={{ fontSize: "17px", fontWeight: "700", color: "#1A1A1A", marginBottom: "10px" }}>
-              新機能を準備中
-            </h2>
-            <p style={{ fontSize: "14px", color: "#666666", lineHeight: "1.7", marginBottom: "24px" }}>
-              さらに便利なツールを追加予定です
-            </p>
-            <button
-              disabled
-              style={{
-                background: "#E5E5E5",
-                color: "#999",
-                padding: "10px 28px",
-                borderRadius: "4px",
-                border: "none",
-                fontSize: "14px",
-                fontWeight: "600",
-                cursor: "not-allowed",
-              }}
-            >
-              準備中
-            </button>
           </div>
         </div>
       </section>
@@ -230,13 +238,7 @@ export default function LandingPage() {
           >
             特徴
           </h2>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(3, 1fr)",
-              gap: "32px",
-            }}
-          >
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "32px" }}>
             {[
               {
                 icon: "🌏",
@@ -256,9 +258,7 @@ export default function LandingPage() {
             ].map((f) => (
               <div key={f.title} style={{ textAlign: "center" }}>
                 <div style={{ fontSize: "36px", marginBottom: "16px" }}>{f.icon}</div>
-                <h3
-                  style={{ fontSize: "16px", fontWeight: "700", color: "#1A1A1A", marginBottom: "10px" }}
-                >
+                <h3 style={{ fontSize: "16px", fontWeight: "700", color: "#1A1A1A", marginBottom: "10px" }}>
                   {f.title}
                 </h3>
                 <p style={{ fontSize: "14px", color: "#666666", lineHeight: "1.8", margin: 0 }}>
@@ -295,45 +295,31 @@ export default function LandingPage() {
                 boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
               }}
             >
-              <div
-                style={{ fontSize: "13px", fontWeight: "600", color: "#888", marginBottom: "8px", letterSpacing: "0.05em" }}
-              >
+              <div style={{ fontSize: "13px", fontWeight: "600", color: "#888", marginBottom: "8px", letterSpacing: "0.05em" }}>
                 FREE
               </div>
-              <div style={{ fontSize: "36px", fontWeight: "700", color: "#1A1A1A", marginBottom: "4px" }}>
-                ¥0
-              </div>
+              <div style={{ fontSize: "36px", fontWeight: "700", color: "#1A1A1A", marginBottom: "4px" }}>¥0</div>
               <div style={{ fontSize: "13px", color: "#aaa", marginBottom: "24px" }}>月10枚まで</div>
-              <ul
-                style={{
-                  listStyle: "none",
-                  padding: 0,
-                  margin: "0 0 28px",
-                  fontSize: "14px",
-                  color: "#555",
-                  lineHeight: "2.2",
-                }}
-              >
+              <ul style={{ listStyle: "none", padding: 0, margin: "0 0 28px", fontSize: "14px", color: "#555", lineHeight: "2.2" }}>
                 <li>✓ 月10枚の変換</li>
                 <li>✓ 主要機能すべて</li>
               </ul>
-              <SignInButton mode="modal" fallbackRedirectUrl="/convert">
-                <button
-                  style={{
-                    width: "100%",
-                    background: "#FFFFFF",
-                    color: "#0017C1",
-                    border: "1px solid #0017C1",
-                    padding: "10px",
-                    borderRadius: "4px",
-                    fontSize: "14px",
-                    fontWeight: "600",
-                    cursor: "pointer",
-                  }}
-                >
-                  無料で始める
-                </button>
-              </SignInButton>
+              <button
+                onClick={() => openSignIn({ fallbackRedirectUrl: "/convert" })}
+                style={{
+                  width: "100%",
+                  background: "#FFFFFF",
+                  color: "#0017C1",
+                  border: "1px solid #0017C1",
+                  padding: "10px",
+                  borderRadius: "4px",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                }}
+              >
+                無料で始める
+              </button>
             </div>
 
             {/* Basic */}
@@ -364,46 +350,33 @@ export default function LandingPage() {
               >
                 おすすめ
               </span>
-              <div
-                style={{ fontSize: "13px", fontWeight: "600", color: "#0017C1", marginBottom: "8px", letterSpacing: "0.05em" }}
-              >
+              <div style={{ fontSize: "13px", fontWeight: "600", color: "#0017C1", marginBottom: "8px", letterSpacing: "0.05em" }}>
                 BASIC
               </div>
               <div style={{ fontSize: "36px", fontWeight: "700", color: "#0017C1", marginBottom: "4px" }}>
-                ¥500
-                <span style={{ fontSize: "14px", fontWeight: "400", color: "#aaa" }}>/月</span>
+                ¥500<span style={{ fontSize: "14px", fontWeight: "400", color: "#aaa" }}>/月</span>
               </div>
               <div style={{ fontSize: "13px", color: "#aaa", marginBottom: "24px" }}>月500枚まで</div>
-              <ul
-                style={{
-                  listStyle: "none",
-                  padding: 0,
-                  margin: "0 0 28px",
-                  fontSize: "14px",
-                  color: "#555",
-                  lineHeight: "2.2",
-                }}
-              >
+              <ul style={{ listStyle: "none", padding: 0, margin: "0 0 28px", fontSize: "14px", color: "#555", lineHeight: "2.2" }}>
                 <li>✓ 月500枚の変換</li>
                 <li>✓ 優先サポート</li>
               </ul>
-              <SignInButton mode="modal" fallbackRedirectUrl="/convert">
-                <button
-                  style={{
-                    width: "100%",
-                    background: "#0017C1",
-                    color: "#fff",
-                    border: "none",
-                    padding: "10px",
-                    borderRadius: "4px",
-                    fontSize: "14px",
-                    fontWeight: "600",
-                    cursor: "pointer",
-                  }}
-                >
-                  Basicプランを始める
-                </button>
-              </SignInButton>
+              <button
+                onClick={() => openSignIn({ fallbackRedirectUrl: "/convert" })}
+                style={{
+                  width: "100%",
+                  background: "#0017C1",
+                  color: "#fff",
+                  border: "none",
+                  padding: "10px",
+                  borderRadius: "4px",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                }}
+              >
+                Basicプランを始める
+              </button>
             </div>
           </div>
         </div>

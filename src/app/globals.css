@@ -25,17 +25,63 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-.tool-card {
+.tool-card-active {
   border: 1px solid #E5E5E5;
   border-radius: 8px;
   background: #FFFFFF;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  transition: border-color 0.15s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   position: relative;
-  padding: 32px 24px;
-  text-align: center;
+  padding: 28px;
+  min-height: 160px;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-decoration: none;
+  color: inherit;
 }
 
-.tool-card:hover {
+.tool-card-active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: transparent;
+  border-radius: 8px 0 0 8px;
+  transition: background 0.15s ease;
+}
+
+.tool-card-active:hover {
   border-color: #0017C1;
+  background: #F0F4FF;
+  box-shadow: 0 4px 16px rgba(0, 23, 193, 0.12);
+  transform: translateY(-2px);
+}
+
+.tool-card-active:hover::before {
+  background: #0017C1;
+}
+
+.tool-card-active:hover .card-arrow {
+  transform: translateX(4px);
+}
+
+.card-arrow {
+  transition: transform 0.15s ease;
+}
+
+.tool-card-inactive {
+  border: 1px solid #E5E5E5;
+  border-radius: 8px;
+  background: #FAFAFA;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  position: relative;
+  padding: 28px;
+  min-height: 160px;
+  display: flex;
+  flex-direction: column;
+  cursor: default;
+  opacity: 0.55;
 }
