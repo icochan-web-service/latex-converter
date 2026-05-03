@@ -2,15 +2,26 @@
 import { useState, useCallback, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
 import { Toaster, toast } from "sonner";
-import { UserButton, useUser } from "@clerk/nextjs";
+import { useUser } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 
 export default function ConvertPage() {
-  const { isSignedIn, user } = useUser();
+  const { isSignedIn, isLoaded } = useUser();
+  const router = useRouter();
   const [image, setImage] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [latex, setLatex] = useState("");
   const [loading, setLoading] = useState(false);
   const [usage, setUsage] = useState<{ used: number; limit: number; remaining: number } | null>(null);
+
+  // 未ログインはトップへ
+  useEffect(() => {
+    if (isLoaded && !isSignedIn) {
+      router.replace("/");
+    }
+  }, [isLoaded, isSignedIn, router]);
 
   useEffect(() => {
     if (!isSignedIn) return;
@@ -60,40 +71,63 @@ export default function ConvertPage() {
 
   const isDisabled = !imageFile || loading || usage?.remaining === 0;
 
+  if (!isLoaded || !isSignedIn) return null;
+
   return (
-    <main style={{ minHeight: "100vh", background: "#FFFFFF", color: "#1A1A1A", fontFamily: "system-ui, -apple-system, sans-serif" }}>
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "#FFFFFF",
+        color: "#1A1A1A",
+        fontFamily: "system-ui, -apple-system, sans-serif",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
       <Toaster position="top-right" />
+      <Header />
 
-      {/* ヘッダー */}
-      <header style={{ borderBottom: "1px solid #E5E5E5" }}>
-        <div style={{ maxWidth: "1080px", margin: "0 auto", padding: "0 40px", height: "64px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <a href="/" style={{ fontSize: "15px", fontWeight: "700", color: "#0017C1", textDecoration: "none" }}>
-            画像をLaTeXに変換
-          </a>
-          <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
-            {isSignedIn && usage && (
-              <div style={{ fontSize: "13px", textAlign: "right" }}>
-                <div style={{ color: "#888" }}>今月の変換枚数</div>
-                <div style={{ fontWeight: "700", color: usage.remaining <= 5 ? "#B91C1C" : "#0017C1" }}>
-                  {usage.used} / {usage.limit} 枚
-                </div>
-              </div>
-            )}
-            {isSignedIn && (
-              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <span style={{ fontSize: "13px", color: "#888" }}>
-                  {user?.emailAddresses[0].emailAddress}
-                </span>
-                <UserButton />
-              </div>
-            )}
+      <main style={{ flex: 1, maxWidth: "1080px", width: "100%", margin: "0 auto", padding: "48px 40px" }}>
+        {/* ページタイトル + 利用状況 */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            marginBottom: "40px",
+          }}
+        >
+          <div>
+            <h1 style={{ fontSize: "22px", fontWeight: "700", marginBottom: "6px", color: "#1A1A1A" }}>
+              画像 → LaTeX 変換
+            </h1>
+            <p style={{ fontSize: "14px", color: "#666666", margin: 0 }}>
+              日本語テキスト・数式の混在画像に対応
+            </p>
           </div>
+          {usage && (
+            <div
+              style={{
+                background: "#F8F9FF",
+                border: "1px solid #E8EEFF",
+                borderRadius: "8px",
+                padding: "12px 20px",
+                textAlign: "right",
+              }}
+            >
+              <div style={{ fontSize: "12px", color: "#666666", marginBottom: "2px" }}>今月の変換枚数</div>
+              <div
+                style={{
+                  fontSize: "18px",
+                  fontWeight: "700",
+                  color: usage.remaining <= 5 ? "#B91C1C" : "#0017C1",
+                }}
+              >
+                {usage.used} / {usage.limit} 枚
+              </div>
+            </div>
+          )}
         </div>
-      </header>
-
-      <div style={{ maxWidth: "1080px", margin: "0 auto", padding: "48px 40px" }}>
-        <h1 style={{ fontSize: "22px", fontWeight: "700", marginBottom: "6px", color: "#1A1A1A" }}>数式 → LaTeX 変換</h1>
-        <p style={{ fontSize: "14px", color: "#888", marginBottom: "40px" }}>日本語テキスト・数式の混在画像に対応</p>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "32px" }}>
           {/* 左：画像アップロード */}
@@ -102,8 +136,8 @@ export default function ConvertPage() {
               {...getRootProps()}
               style={{
                 border: `2px dashed ${isDragActive ? "#0017C1" : "#E5E5E5"}`,
-                background: isDragActive ? "#EEF2FF" : "#F8F8F8",
-                borderRadius: "4px",
+                background: isDragActive ? "#EEF2FF" : "#F8F9FF",
+                borderRadius: "8px",
                 padding: "48px 24px",
                 textAlign: "center",
                 cursor: "pointer",
@@ -112,13 +146,19 @@ export default function ConvertPage() {
             >
               <input {...getInputProps()} />
               {image ? (
-                <img src={image} alt="preview" style={{ maxHeight: "256px", margin: "0 auto", display: "block", borderRadius: "4px" }} />
+                <img
+                  src={image}
+                  alt="preview"
+                  style={{ maxHeight: "256px", margin: "0 auto", display: "block", borderRadius: "4px" }}
+                />
               ) : (
                 <div style={{ color: "#999" }}>
                   <div style={{ fontSize: "36px", marginBottom: "12px" }}>📷</div>
                   <p style={{ margin: "0 0 4px", fontSize: "14px" }}>画像をドラッグ＆ドロップ</p>
                   <p style={{ margin: "4px 0 0", fontSize: "13px" }}>または クリックして選択</p>
-                  <p style={{ margin: "12px 0 0", fontSize: "12px", color: "#bbb" }}>PNG / JPG / WEBP・5MB以下</p>
+                  <p style={{ margin: "12px 0 0", fontSize: "12px", color: "#bbb" }}>
+                    PNG / JPG / WEBP・5MB以下
+                  </p>
                 </div>
               )}
             </div>
@@ -154,7 +194,16 @@ export default function ConvertPage() {
                     const data = await res.json();
                     if (data.url) window.location.href = data.url;
                   }}
-                  style={{ background: "#0017C1", color: "#fff", padding: "10px 24px", borderRadius: "4px", border: "none", fontSize: "14px", fontWeight: "700", cursor: "pointer" }}
+                  style={{
+                    background: "#0017C1",
+                    color: "#fff",
+                    padding: "10px 24px",
+                    borderRadius: "4px",
+                    border: "none",
+                    fontSize: "14px",
+                    fontWeight: "700",
+                    cursor: "pointer",
+                  }}
                 >
                   Basicプランにアップグレード（¥500/月）
                 </button>
@@ -164,12 +213,27 @@ export default function ConvertPage() {
 
           {/* 右：LaTeX出力 */}
           <div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-              <span style={{ fontSize: "13px", color: "#888" }}>出力 LaTeX</span>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "8px",
+              }}
+            >
+              <span style={{ fontSize: "13px", color: "#666666" }}>出力 LaTeX</span>
               {latex && (
                 <button
                   onClick={copy}
-                  style={{ fontSize: "12px", background: "#F8F8F8", border: "1px solid #E5E5E5", padding: "4px 12px", borderRadius: "4px", cursor: "pointer", color: "#1A1A1A" }}
+                  style={{
+                    fontSize: "12px",
+                    background: "#F8F9FF",
+                    border: "1px solid #E5E5E5",
+                    padding: "4px 12px",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    color: "#1A1A1A",
+                  }}
                 >
                   コピー
                 </button>
@@ -182,9 +246,9 @@ export default function ConvertPage() {
               style={{
                 width: "100%",
                 height: "320px",
-                background: "#F8F8F8",
+                background: "#F8F9FF",
                 border: "1px solid #E5E5E5",
-                borderRadius: "4px",
+                borderRadius: "8px",
                 padding: "16px",
                 fontSize: "13px",
                 fontFamily: "monospace",
@@ -197,7 +261,9 @@ export default function ConvertPage() {
             <p style={{ fontSize: "12px", color: "#bbb", marginTop: "8px" }}>結果は直接編集できます</p>
           </div>
         </div>
-      </div>
-    </main>
+      </main>
+
+      <Footer />
+    </div>
   );
 }

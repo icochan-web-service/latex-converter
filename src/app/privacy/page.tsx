@@ -1,14 +1,32 @@
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+
 export default function Privacy() {
   return (
-    <main className="min-h-screen bg-white text-gray-800 p-8">
-      <div className="max-w-3xl mx-auto">
-        <h1 className="text-3xl font-bold mb-8 text-gray-900">プライバシーポリシー</h1>
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "#FFFFFF",
+        color: "#1A1A1A",
+        fontFamily: "system-ui, -apple-system, sans-serif",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      <Header />
 
-        <div className="space-y-8 text-gray-600 leading-relaxed">
-          <section>
-            <h2 className="text-xl font-bold text-gray-900 mb-3">1. 収集する情報</h2>
-            <p>当サービスでは、以下の情報を収集します。</p>
-            <ul className="list-disc list-inside mt-2 space-y-1">
+      <main style={{ flex: 1, maxWidth: "720px", width: "100%", margin: "0 auto", padding: "56px 40px" }}>
+        <h1 style={{ fontSize: "28px", fontWeight: "700", marginBottom: "40px", color: "#1A1A1A" }}>
+          プライバシーポリシー
+        </h1>
+
+        <div style={{ color: "#555", lineHeight: "1.9", fontSize: "15px" }}>
+          <section style={{ marginBottom: "36px" }}>
+            <h2 style={{ fontSize: "17px", fontWeight: "700", color: "#1A1A1A", marginBottom: "12px" }}>
+              1. 収集する情報
+            </h2>
+            <p style={{ margin: "0 0 8px" }}>当サービスでは、以下の情報を収集します。</p>
+            <ul style={{ margin: 0, paddingLeft: "20px", lineHeight: "2" }}>
               <li>メールアドレス（ログイン認証のため）</li>
               <li>変換した画像データ（変換処理のみに使用し、保存しません）</li>
               <li>変換枚数の利用履歴</li>
@@ -16,9 +34,11 @@ export default function Privacy() {
             </ul>
           </section>
 
-          <section>
-            <h2 className="text-xl font-bold text-gray-900 mb-3">2. 情報の利用目的</h2>
-            <ul className="list-disc list-inside space-y-1">
+          <section style={{ marginBottom: "36px" }}>
+            <h2 style={{ fontSize: "17px", fontWeight: "700", color: "#1A1A1A", marginBottom: "12px" }}>
+              2. 情報の利用目的
+            </h2>
+            <ul style={{ margin: 0, paddingLeft: "20px", lineHeight: "2" }}>
               <li>サービスの提供・運営</li>
               <li>利用状況の管理（変換枚数の制限管理）</li>
               <li>サービス改善のための分析</li>
@@ -26,46 +46,62 @@ export default function Privacy() {
             </ul>
           </section>
 
-          <section>
-            <h2 className="text-xl font-bold text-gray-900 mb-3">3. 第三者への提供</h2>
-            <p>当サービスは、以下のサービスを利用しています。</p>
-            <ul className="list-disc list-inside mt-2 space-y-1">
+          <section style={{ marginBottom: "36px" }}>
+            <h2 style={{ fontSize: "17px", fontWeight: "700", color: "#1A1A1A", marginBottom: "12px" }}>
+              3. 第三者への提供
+            </h2>
+            <p style={{ margin: "0 0 8px" }}>当サービスは、以下のサービスを利用しています。</p>
+            <ul style={{ margin: 0, paddingLeft: "20px", lineHeight: "2" }}>
               <li>Clerk（認証サービス）</li>
               <li>Stripe（決済サービス）</li>
               <li>Supabase（データベース）</li>
               <li>Google Gemini API（画像変換処理）</li>
               <li>Vercel（ホスティング）</li>
             </ul>
-            <p className="mt-2">法令に基づく場合を除き、第三者に個人情報を提供しません。</p>
+            <p style={{ margin: "8px 0 0" }}>法令に基づく場合を除き、第三者に個人情報を提供しません。</p>
           </section>
 
-          <section>
-            <h2 className="text-xl font-bold text-gray-900 mb-3">4. Cookie</h2>
-            <p>認証状態の維持のためにCookieを使用します。ブラウザの設定でCookieを無効にすることができますが、サービスが正常に動作しない場合があります。</p>
+          <section style={{ marginBottom: "36px" }}>
+            <h2 style={{ fontSize: "17px", fontWeight: "700", color: "#1A1A1A", marginBottom: "12px" }}>
+              4. Cookie
+            </h2>
+            <p style={{ margin: 0 }}>
+              認証状態の維持のためにCookieを使用します。ブラウザの設定でCookieを無効にすることができますが、サービスが正常に動作しない場合があります。
+            </p>
           </section>
 
-          <section>
-            <h2 className="text-xl font-bold text-gray-900 mb-3">5. 個人情報の管理</h2>
-            <p>収集した個人情報は適切に管理し、不正アクセス・紛失・破壊・改ざん・漏洩等を防止するために必要な措置を講じます。</p>
+          <section style={{ marginBottom: "36px" }}>
+            <h2 style={{ fontSize: "17px", fontWeight: "700", color: "#1A1A1A", marginBottom: "12px" }}>
+              5. 個人情報の管理
+            </h2>
+            <p style={{ margin: 0 }}>
+              収集した個人情報は適切に管理し、不正アクセス・紛失・破壊・改ざん・漏洩等を防止するために必要な措置を講じます。
+            </p>
           </section>
 
-          <section>
-            <h2 className="text-xl font-bold text-gray-900 mb-3">6. お問い合わせ</h2>
-            <p>プライバシーポリシーに関するお問い合わせは、サービス内のお問い合わせフォームよりご連絡ください。</p>
+          <section style={{ marginBottom: "36px" }}>
+            <h2 style={{ fontSize: "17px", fontWeight: "700", color: "#1A1A1A", marginBottom: "12px" }}>
+              6. お問い合わせ
+            </h2>
+            <p style={{ margin: 0 }}>
+              プライバシーポリシーに関するお問い合わせは、サービス内のお問い合わせフォームよりご連絡ください。
+            </p>
           </section>
 
-          <section>
-            <h2 className="text-xl font-bold text-gray-900 mb-3">7. 改定</h2>
-            <p>本プライバシーポリシーは必要に応じて改定することがあります。重要な変更がある場合はサービス上でお知らせします。</p>
+          <section style={{ marginBottom: "36px" }}>
+            <h2 style={{ fontSize: "17px", fontWeight: "700", color: "#1A1A1A", marginBottom: "12px" }}>
+              7. 改定
+            </h2>
+            <p style={{ margin: 0 }}>
+              本プライバシーポリシーは必要に応じて改定することがあります。重要な変更がある場合はサービス上でお知らせします。
+            </p>
           </section>
 
-          <p className="text-sm text-gray-400 mt-8">制定日：2026年5月3日</p>
+          <p style={{ fontSize: "13px", color: "#aaa", marginTop: "48px" }}>制定日：2026年5月3日</p>
         </div>
+      </main>
 
-        <div className="mt-8">
-          <a href="/" className="text-blue-500 hover:text-blue-400">← サービスに戻る</a>
-        </div>
-      </div>
-    </main>
+      <Footer />
+    </div>
   );
 }
