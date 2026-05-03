@@ -12,11 +12,7 @@ export default function LandingPage() {
 
   const handleConvert = (e: React.MouseEvent) => {
     e.preventDefault();
-    if (isSignedIn) {
-      router.push("/convert");
-    } else {
-      openSignIn({ fallbackRedirectUrl: "/convert" });
-    }
+    router.push("/convert");
   };
 
   const handleComingSoon = () => {
@@ -120,7 +116,57 @@ export default function LandingPage() {
             </div>
           </a>
 
-          {/* カード2：LaTeX数式プレビュー（アクティブ） */}
+          {/* カード2：PDF→LaTeX変換（アクティブ） */}
+          <a href="/pdf_convert" className="tool-card-active">
+            <div style={{ display: "flex", gap: "16px", flex: 1 }}>
+              <div
+                style={{
+                  width: "48px",
+                  height: "48px",
+                  minWidth: "48px",
+                  background: "#0017C1",
+                  borderRadius: "50%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "22px",
+                }}
+              >
+                📑
+              </div>
+              <div>
+                <h2
+                  style={{
+                    fontSize: "16px",
+                    fontWeight: "700",
+                    color: "#1A1A1A",
+                    marginBottom: "8px",
+                    marginTop: 0,
+                  }}
+                >
+                  PDF → LaTeX 変換
+                </h2>
+                <p style={{ fontSize: "13px", color: "#666666", lineHeight: "1.7", margin: 0 }}>
+                  PDFをアップロードして数式・本文をLaTeXに変換
+                </p>
+              </div>
+            </div>
+            <div
+              className="card-arrow"
+              style={{
+                position: "absolute",
+                bottom: "20px",
+                right: "24px",
+                color: "#0017C1",
+                fontSize: "18px",
+                fontWeight: "700",
+              }}
+            >
+              →
+            </div>
+          </a>
+
+          {/* カード3：LaTeX数式プレビュー（アクティブ） */}
           <a href="/compile" className="tool-card-active">
             <span
               style={{
