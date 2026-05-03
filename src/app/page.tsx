@@ -66,7 +66,7 @@ export default function LandingPage() {
             maxWidth: "1080px",
             margin: "0 auto",
             display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
+            gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
             gap: "24px",
           }}
         >
@@ -120,7 +120,75 @@ export default function LandingPage() {
             </div>
           </a>
 
-          {/* カード2：LaTeX→PDF（近日公開） */}
+          {/* カード2：LaTeX数式プレビュー（アクティブ） */}
+          <a href="/compile" className="tool-card-active">
+            <span
+              style={{
+                position: "absolute",
+                top: "12px",
+                right: "12px",
+                background: "#0A8A4A",
+                color: "#fff",
+                fontSize: "11px",
+                fontWeight: "700",
+                padding: "3px 8px",
+                borderRadius: "4px",
+              }}
+            >
+              無料
+            </span>
+            <div style={{ display: "flex", gap: "16px", flex: 1 }}>
+              <div
+                style={{
+                  width: "48px",
+                  height: "48px",
+                  minWidth: "48px",
+                  background: "#0017C1",
+                  borderRadius: "50%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "22px",
+                  color: "#fff",
+                  fontWeight: "700",
+                  fontFamily: "serif",
+                }}
+              >
+                ∑
+              </div>
+              <div>
+                <h2
+                  style={{
+                    fontSize: "16px",
+                    fontWeight: "700",
+                    color: "#1A1A1A",
+                    marginBottom: "8px",
+                    marginTop: 0,
+                  }}
+                >
+                  LaTeX 数式プレビュー
+                </h2>
+                <p style={{ fontSize: "13px", color: "#666666", lineHeight: "1.7", margin: 0 }}>
+                  数式をリアルタイムでレンダリング。PNG・SVGでエクスポート可能
+                </p>
+              </div>
+            </div>
+            <div
+              className="card-arrow"
+              style={{
+                position: "absolute",
+                bottom: "20px",
+                right: "24px",
+                color: "#0017C1",
+                fontSize: "18px",
+                fontWeight: "700",
+              }}
+            >
+              →
+            </div>
+          </a>
+
+          {/* カード3：LaTeX→PDF（近日公開） */}
           <div className="tool-card-active" onClick={handleComingSoon}>
             <span
               style={{
