@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { auth } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 const PLAN_LIMITS: Record<string, number> = {
   free: 10,
@@ -56,4 +56,27 @@ export async function GET() {
     remaining: Math.max(0, limit - used),
     plan,
   });
+}
+
+export async function POST(req: NextRequest) {
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json({ error: "未認証です" }, { status: 401 });
+  }
+
+  const body = await req.json().catch(() => ({}));
+  const count =
+    typeof body.count === "number" && body.count > 0
+      ? Math.floor(body.count)
+      : 1;
+
+  const supabase = getSupabase();
+  const records = Array.from({ length: count }, () => ({ user_id: userId }));
+  const { error } = await supabase.from("conversions").insert(records);
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ ok: true, consumed: count });
 }

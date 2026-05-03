@@ -23,6 +23,7 @@ export default function PdfConvertPage() {
   const [outputMode, setOutputMode] = useState<OutputMode>("simple");
   const [copied, setCopied] = useState(false);
   const [usage, setUsage] = useState<{ used: number; limit: number; remaining: number } | null>(null);
+  const [limitError, setLimitError] = useState<{ required: number; remaining: number } | null>(null);
 
   useEffect(() => {
     if (!isSignedIn) return;
@@ -36,6 +37,7 @@ export default function PdfConvertPage() {
     if (!file) return;
     setPdfFile(file);
     setLatex("");
+    setLimitError(null);
   }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -57,7 +59,14 @@ export default function PdfConvertPage() {
       form.append("outputMode", outputMode);
       const res = await fetch("/api/pdf_convert", { method: "POST", body: form });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+      if (!res.ok) {
+        if (data.error === "conversion_limit_exceeded") {
+          setLimitError({ required: data.required, remaining: data.remaining });
+          return;
+        }
+        throw new Error(data.message || data.error || "変換に失敗しました");
+      }
+      setLimitError(null);
       setLatex(data.latex);
       fetch("/api/usage")
         .then((r) => r.json())
@@ -272,11 +281,50 @@ export default function PdfConvertPage() {
             : "LaTeX に変換"}
         </button>
 
-        {/* アップグレード案内 */}
+        {/* ページ数不足エラー */}
+        {limitError && (
+          <div
+            style={{
+              background: "#FEF2F2",
+              border: "1px solid #FECACA",
+              borderRadius: "4px",
+              padding: "16px 20px",
+              marginBottom: "12px",
+            }}
+          >
+            <p style={{ fontSize: "14px", color: "#B91C1C", fontWeight: "600", margin: "0 0 4px" }}>
+              変換枚数が不足しています
+            </p>
+            <p style={{ fontSize: "13px", color: "#7F1D1D", margin: "0 0 12px" }}>
+              このPDFは <strong>{limitError.required}ページ</strong> 分消費しますが、残り枚数は <strong>{limitError.remaining}枚</strong> です。
+            </p>
+            <button
+              onClick={async () => {
+                const res = await fetch("/api/checkout", { method: "POST" });
+                const data = await res.json();
+                if (data.url) window.location.href = data.url;
+              }}
+              style={{
+                background: "#0017C1",
+                color: "#fff",
+                padding: "9px 20px",
+                borderRadius: "4px",
+                border: "none",
+                fontSize: "13px",
+                fontWeight: "700",
+                cursor: "pointer",
+              }}
+            >
+              Basicプランにアップグレード（¥500/月）
+            </button>
+          </div>
+        )}
+
+        {/* アップグレード案内（残り0枚） */}
         {isSignedIn && usage?.remaining === 0 && (
           <div style={{ textAlign: "center", marginBottom: "16px" }}>
             <p style={{ fontSize: "13px", color: "#B91C1C", marginBottom: "8px" }}>
-              今月の無料枠（10回）を使い切りました
+              今月の無料枠（10枚）を使い切りました
             </p>
             <button
               onClick={async () => {

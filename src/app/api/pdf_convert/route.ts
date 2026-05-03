@@ -2,6 +2,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { createClient } from "@supabase/supabase-js";
+import { PDFDocument } from "pdf-lib";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
@@ -82,7 +83,10 @@ export async function POST(req: NextRequest) {
       .eq("user_id", userId)
       .gte("created_at", startOfMonth.toISOString());
 
-    if ((count ?? 0) >= limit) {
+    const used = count ?? 0;
+    const remaining = Math.max(0, limit - used);
+
+    if (remaining === 0) {
       return NextResponse.json(
         { error: `今月の変換回数（${limit}回）を使い切りました。プランのアップグレードをご検討ください。` },
         { status: 403 }
@@ -107,6 +111,29 @@ export async function POST(req: NextRequest) {
     }
 
     const bytes = await file.arrayBuffer();
+
+    // PDFページ数を取得
+    let pageCount = 1;
+    try {
+      const pdfDoc = await PDFDocument.load(bytes, { ignoreEncryption: true });
+      pageCount = pdfDoc.getPageCount();
+    } catch {
+      // ページ数取得に失敗した場合は1として扱う
+    }
+
+    // 残り枚数がページ数に足りない場合はエラー
+    if (remaining < pageCount) {
+      return NextResponse.json(
+        {
+          error: "conversion_limit_exceeded",
+          message: `変換枚数が不足しています。このPDFは${pageCount}ページ分消費しますが、残り枚数は${remaining}枚です。`,
+          required: pageCount,
+          remaining,
+        },
+        { status: 403 }
+      );
+    }
+
     const base64 = Buffer.from(bytes).toString("base64");
 
     const systemPrompt = outputMode === "full" ? SYSTEM_PROMPT_FULL : SYSTEM_PROMPT_SIMPLE;
@@ -124,10 +151,11 @@ export async function POST(req: NextRequest) {
 
     const latex = result.response.text().trim();
 
-    // 変換履歴を記録
-    await supabase.from("conversions").insert({ user_id: userId });
+    // ページ数分の変換履歴を一括記録
+    const records = Array.from({ length: pageCount }, () => ({ user_id: userId }));
+    await supabase.from("conversions").insert(records);
 
-    return NextResponse.json({ latex, plan, limit });
+    return NextResponse.json({ latex, plan, limit, pageCount });
 
   } catch (error: unknown) {
     console.error(error);
