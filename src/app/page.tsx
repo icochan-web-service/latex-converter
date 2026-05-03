@@ -1,182 +1,121 @@
 "use client";
-import { useState, useCallback, useEffect } from "react";
-import { useDropzone } from "react-dropzone";
-import { Toaster, toast } from "sonner";
-import { UserButton, SignInButton, useUser } from "@clerk/nextjs";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { SignInButton, useUser } from "@clerk/nextjs";
 
-export default function Home() {
-  const { isSignedIn, user } = useUser();
-  const [image, setImage] = useState<string | null>(null);
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [latex, setLatex] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [usage, setUsage] = useState<{ used: number; limit: number; remaining: number } | null>(null);
+export default function LandingPage() {
+  const { isSignedIn, isLoaded } = useUser();
+  const router = useRouter();
 
-  // 変換枚数を取得
   useEffect(() => {
-    if (!isSignedIn) return;
-    fetch("/api/usage")
-      .then((r) => r.json())
-      .then(setUsage);
-  }, [isSignedIn]);
-
-  const onDrop = useCallback((files: File[]) => {
-    const file = files[0];
-    if (!file) return;
-    setImageFile(file);
-    setImage(URL.createObjectURL(file));
-    setLatex("");
-  }, []);
-
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: { "image/*": [".png", ".jpg", ".jpeg", ".webp"] },
-    maxFiles: 1,
-  });
-
-  const convert = async () => {
-    if (!imageFile) return;
-    if (!isSignedIn) {
-      toast.error("変換するにはログインが必要です");
-      return;
+    if (isLoaded && isSignedIn) {
+      router.replace("/convert");
     }
-    setLoading(true);
-    try {
-      const form = new FormData();
-      form.append("image", imageFile);
-      const res = await fetch("/api/convert", { method: "POST", body: form });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-      setLatex(data.latex);
-      // 変換後に枚数を更新
-      fetch("/api/usage")
-        .then((r) => r.json())
-        .then(setUsage);
-    } catch (e: any) {
-      toast.error(e.message || "変換に失敗しました");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const copy = () => {
-    navigator.clipboard.writeText(latex);
-    toast.success("コピーしました");
-  };
+  }, [isLoaded, isSignedIn, router]);
 
   return (
-    <main className="min-h-screen bg-gray-950 text-gray-100 p-8">
-      <Toaster position="top-right" />
-
+    <div style={{ background: "#FFFFFF", color: "#1A1A1A", minHeight: "100vh", fontFamily: "system-ui, -apple-system, sans-serif" }}>
       {/* ヘッダー */}
-      <div className="max-w-4xl mx-auto mb-10 flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">数式 → LaTeX 変換</h1>
-          <p className="text-gray-400">日本語テキスト・数式の混在画像に対応</p>
+      <header style={{ borderBottom: "1px solid #E5E5E5" }}>
+        <div style={{ maxWidth: "1080px", margin: "0 auto", padding: "0 40px", height: "64px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <span style={{ fontSize: "15px", fontWeight: "700", color: "#0017C1" }}>画像をLaTeXに変換</span>
+          <SignInButton mode="modal">
+            <button style={{ background: "#0017C1", color: "#fff", padding: "8px 20px", borderRadius: "4px", border: "none", fontSize: "14px", fontWeight: "600", cursor: "pointer" }}>
+              ログイン
+            </button>
+          </SignInButton>
         </div>
-        <div className="flex items-center gap-4">
-          {isSignedIn && usage && (
-            <div className="text-sm text-right">
-              <div className="text-gray-400">今月の変換枚数</div>
-              <div className={`font-bold ${usage.remaining <= 5 ? "text-red-400" : "text-blue-400"}`}>
-                {usage.used} / {usage.limit} 枚
-              </div>
-            </div>
-          )}
-          {isSignedIn ? (
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-gray-400">
-                {user.emailAddresses[0].emailAddress}
-              </span>
-              <UserButton />
-            </div>
-          ) : (
-            <SignInButton mode="modal">
-              <button className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-bold transition">
-                ログイン
-              </button>
-            </SignInButton>
-          )}
+      </header>
+
+      {/* ヒーロー */}
+      <section style={{ padding: "96px 40px 80px", textAlign: "center" }}>
+        <div style={{ maxWidth: "720px", margin: "0 auto" }}>
+          <h1 style={{ fontSize: "38px", fontWeight: "700", lineHeight: "1.6", color: "#1A1A1A", marginBottom: "24px" }}>
+            教科書・論文の数式を、<br />高精度でLaTeX形式に。
+          </h1>
+          <p style={{ fontSize: "17px", color: "#555", lineHeight: "1.9", marginBottom: "48px" }}>
+            画像をアップロードするだけで、数式・日本語混在の文書をLaTeXコードに変換。<br />
+            研究者・大学院生・大学生の論文執筆を支援します。
+          </p>
+          <SignInButton mode="modal">
+            <button style={{ background: "#0017C1", color: "#fff", padding: "14px 48px", borderRadius: "4px", border: "none", fontSize: "16px", fontWeight: "700", cursor: "pointer" }}>
+              無料で始める
+            </button>
+          </SignInButton>
         </div>
-      </div>
+      </section>
 
-      <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* 左：画像アップロード */}
-        <div>
-          <div
-            {...getRootProps()}
-            className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition
-              ${isDragActive
-                ? "border-blue-400 bg-blue-950/30"
-                : "border-gray-700 hover:border-gray-500"}`}
-          >
-            <input {...getInputProps()} />
-            {image ? (
-              <img src={image} alt="preview" className="max-h-64 mx-auto rounded-lg" />
-            ) : (
-              <div className="text-gray-500">
-                <div className="text-4xl mb-3">📷</div>
-                <p>画像をドラッグ＆ドロップ</p>
-                <p className="text-sm mt-1">または クリックして選択</p>
-                <p className="text-xs mt-3">PNG / JPG / WEBP・5MB以下</p>
-              </div>
-            )}
-          </div>
-
-          <button
-            onClick={convert}
-            disabled={!imageFile || loading || (usage?.remaining === 0)}
-            className="w-full mt-4 py-3 rounded-xl font-bold text-white
-              bg-blue-600 hover:bg-blue-500
-              disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed
-              transition"
-          >
-            {loading ? "変換中..." : usage?.remaining === 0 ? "無料枠を使い切りました" : "LaTeX に変換"}
-          </button>
-
-          {usage?.remaining === 0 && (
-            <div className="text-center mt-2">
-              <p className="text-sm text-red-400 mb-2">
-                今月の無料枠（10枚）を使い切りました
-              </p>
-              <button
-                onClick={async () => {
-                  const res = await fetch("/api/checkout", { method: "POST" });
-                  const data = await res.json();
-                  if (data.url) window.location.href = data.url;
-                }}
-                className="bg-yellow-500 hover:bg-yellow-400 text-black px-6 py-2 rounded-lg text-sm font-bold transition"
+      {/* 特徴セクション */}
+      <section style={{ background: "#F8F8F8", padding: "72px 40px", borderTop: "1px solid #E5E5E5", borderBottom: "1px solid #E5E5E5" }}>
+        <div style={{ maxWidth: "1080px", margin: "0 auto" }}>
+          <h2 style={{ fontSize: "20px", fontWeight: "700", textAlign: "center", marginBottom: "48px", color: "#1A1A1A" }}>特徴</h2>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "24px" }}>
+            {[
+              {
+                title: "日本語対応",
+                desc: "数式と日本語テキストが混在する画像にも対応。教科書や試験問題もそのまま変換できます。",
+              },
+              {
+                title: "高精度変換",
+                desc: "最新のAIモデルを使用し、複雑な数式も高精度でLaTeXコードに変換します。",
+              },
+              {
+                title: "簡単操作",
+                desc: "画像をドラッグ＆ドロップするだけ。LaTeXの知識がなくても直感的に使えます。",
+              },
+            ].map((f) => (
+              <div
+                key={f.title}
+                style={{ background: "#FFFFFF", border: "1px solid #E5E5E5", padding: "32px", borderRadius: "4px" }}
               >
-                Basicプランにアップグレード（¥500/月）
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* 右：LaTeX出力 */}
-        <div>
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-sm text-gray-400">出力 LaTeX</span>
-            {latex && (
-              <button
-                onClick={copy}
-                className="text-xs bg-gray-800 hover:bg-gray-700 px-3 py-1 rounded-lg transition"
-              >
-                コピー
-              </button>
-            )}
+                <h3 style={{ fontSize: "15px", fontWeight: "700", color: "#0017C1", marginBottom: "12px" }}>{f.title}</h3>
+                <p style={{ fontSize: "14px", color: "#555", lineHeight: "1.8", margin: 0 }}>{f.desc}</p>
+              </div>
+            ))}
           </div>
-          <textarea
-            value={latex}
-            onChange={(e) => setLatex(e.target.value)}
-            placeholder="変換結果がここに表示されます..."
-            className="w-full h-64 bg-gray-900 border border-gray-700 rounded-xl p-4
-              text-sm font-mono text-gray-200 resize-none
-              focus:outline-none focus:border-blue-500"
-          />
-          <p className="text-xs text-gray-600 mt-2">結果は直接編集できます</p>
         </div>
-      </div>
-    </main>
+      </section>
+
+      {/* 料金セクション */}
+      <section style={{ padding: "72px 40px" }}>
+        <div style={{ maxWidth: "720px", margin: "0 auto" }}>
+          <h2 style={{ fontSize: "20px", fontWeight: "700", textAlign: "center", marginBottom: "48px", color: "#1A1A1A" }}>料金プラン</h2>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px" }}>
+            <div style={{ border: "1px solid #E5E5E5", padding: "36px", borderRadius: "4px" }}>
+              <div style={{ fontSize: "13px", fontWeight: "600", color: "#888", marginBottom: "8px", letterSpacing: "0.05em" }}>FREE</div>
+              <div style={{ fontSize: "32px", fontWeight: "700", color: "#1A1A1A", marginBottom: "4px" }}>¥0</div>
+              <div style={{ fontSize: "13px", color: "#aaa", marginBottom: "28px" }}>月10枚まで</div>
+              <ul style={{ listStyle: "none", padding: 0, margin: 0, fontSize: "14px", color: "#555", lineHeight: "2.2" }}>
+                <li>✓ 月10枚の変換</li>
+                <li>✓ 日本語・数式対応</li>
+              </ul>
+            </div>
+            <div style={{ border: "2px solid #0017C1", padding: "36px", borderRadius: "4px" }}>
+              <div style={{ fontSize: "13px", fontWeight: "600", color: "#0017C1", marginBottom: "8px", letterSpacing: "0.05em" }}>BASIC</div>
+              <div style={{ fontSize: "32px", fontWeight: "700", color: "#1A1A1A", marginBottom: "4px" }}>
+                ¥500
+                <span style={{ fontSize: "14px", fontWeight: "400", color: "#aaa" }}>/月</span>
+              </div>
+              <div style={{ fontSize: "13px", color: "#aaa", marginBottom: "28px" }}>月500枚まで</div>
+              <ul style={{ listStyle: "none", padding: 0, margin: 0, fontSize: "14px", color: "#555", lineHeight: "2.2" }}>
+                <li>✓ 月500枚の変換</li>
+                <li>✓ 日本語・数式対応</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* フッター */}
+      <footer style={{ borderTop: "1px solid #E5E5E5", padding: "24px 40px" }}>
+        <div style={{ maxWidth: "1080px", margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span style={{ fontSize: "13px", color: "#bbb" }}>© 2025 画像をLaTeXに変換</span>
+          <div style={{ display: "flex", gap: "24px" }}>
+            <a href="/privacy" style={{ fontSize: "13px", color: "#888", textDecoration: "none" }}>プライバシーポリシー</a>
+            <a href="/terms" style={{ fontSize: "13px", color: "#888", textDecoration: "none" }}>利用規約</a>
+          </div>
+        </div>
+      </footer>
+    </div>
   );
 }
