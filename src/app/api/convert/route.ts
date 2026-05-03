@@ -18,7 +18,7 @@ const PLAN_LIMITS: Record<string, number> = {
   pro: 5000,
 };
 
-const SYSTEM_PROMPT = `あなたは数式OCRの専門家です。
+const SYSTEM_PROMPT_SIMPLE = `あなたは数式OCRの専門家です。
 画像に含まれる数式・テキストをLaTeXに変換してください。
 
 ルール：
@@ -26,7 +26,30 @@ const SYSTEM_PROMPT = `あなたは数式OCRの専門家です。
 - 別立て数式は必ずalign*環境を使う（$$や\\[\\]は使わない）
 - 日本語テキストはそのまま地の文として出力する
 - ∴ ∵ などの記号はそのまま使う
-- コンパイル可能なLaTeXのみ出力する
+- \\documentclass や \\begin{document} などのプリアンブルは出力しない
+- コードブロックや説明文は不要、LaTeXコードだけを返す
+- section*, subsection*, subsubsection*で構造を表現する`;
+
+const SYSTEM_PROMPT_FULL = `あなたは数式OCRの専門家です。
+画像に含まれる数式・テキストをLaTeXに変換してください。
+
+ルール：
+- 文中数式は$と$で囲む
+- 別立て数式は必ずalign*環境を使う（$$や\\[\\]は使わない）
+- 日本語テキストはそのまま地の文として出力する
+- ∴ ∵ などの記号はそのまま使う
+- 以下のプリアンブルを含む完全な形式で出力する：
+
+\\documentclass[a4paper]{jsarticle}
+\\usepackage{amsmath}
+\\usepackage{amssymb}
+\\usepackage{bm}
+\\begin{document}
+
+（変換した内容）
+
+\\end{document}
+
 - コードブロックや説明文は不要、LaTeXコードだけを返す
 - section*, subsection*, subsubsection*で構造を表現する`;
 
@@ -69,6 +92,7 @@ export async function POST(req: NextRequest) {
     // 画像取得
     const formData = await req.formData();
     const file = formData.get("image") as File;
+    const outputMode = (formData.get("outputMode") as string) ?? "simple";
 
     if (!file) {
       return NextResponse.json({ error: "画像がありません" }, { status: 400 });
@@ -81,10 +105,11 @@ export async function POST(req: NextRequest) {
     const bytes = await file.arrayBuffer();
     const base64 = Buffer.from(bytes).toString("base64");
 
+    const systemPrompt = outputMode === "full" ? SYSTEM_PROMPT_FULL : SYSTEM_PROMPT_SIMPLE;
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const result = await model.generateContent([
-      SYSTEM_PROMPT,
+      systemPrompt,
       {
         inlineData: {
           mimeType: file.type as "image/jpeg" | "image/png" | "image/webp",
