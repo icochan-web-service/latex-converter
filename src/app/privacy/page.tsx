@@ -84,7 +84,8 @@ export default function Privacy() {
               6. お問い合わせ
             </h2>
             <p style={{ margin: 0 }}>
-              プライバシーポリシーに関するお問い合わせは、サービス内のお問い合わせフォームよりご連絡ください。
+              プライバシーポリシーに関するお問い合わせは、下記メールアドレスよりご連絡ください。<br />
+              <a href="mailto:notebizhack@gmail.com" style={{ color: "#0017C1" }}>notebizhack@gmail.com</a>
             </p>
           </section>
 

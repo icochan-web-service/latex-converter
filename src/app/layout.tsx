@@ -6,6 +6,25 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "かんたんTeX",
   description: "日本語対応のオンラインLaTeXツール",
+  icons: {
+    icon: "/logo.svg",
+    apple: "/logo.png",
+  },
+  openGraph: {
+    title: "かんたんTeX",
+    description: "日本語対応のオンラインLaTeXツール",
+    url: "https://latex.viztechlab.com",
+    siteName: "かんたんTeX",
+    images: [{ url: "https://latex.viztechlab.com/logo.png", width: 512, height: 512 }],
+    locale: "ja_JP",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "かんたんTeX",
+    description: "日本語対応のオンラインLaTeXツール",
+    images: ["https://latex.viztechlab.com/logo.png"],
+  },
 };
 
 export default function RootLayout({

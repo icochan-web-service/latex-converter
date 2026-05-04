@@ -203,6 +203,21 @@ export default function Header() {
               <span className="header-user-email" style={{ fontSize: "13px", color: "#666666" }}>
                 {user.emailAddresses[0].emailAddress}
               </span>
+              <Link
+                href="/account"
+                style={{
+                  fontSize: "13px",
+                  color: "#1A1A1A",
+                  textDecoration: "none",
+                  padding: "6px 12px",
+                  border: "1px solid #E5E5E5",
+                  borderRadius: "4px",
+                  whiteSpace: "nowrap",
+                  flexShrink: 0,
+                }}
+              >
+                マイページ
+              </Link>
               <UserButton />
             </>
           ) : (
