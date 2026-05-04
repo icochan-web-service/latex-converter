@@ -166,7 +166,7 @@ export default function CompilePage() {
         {/* ページタイトル */}
         <div style={{ marginBottom: '28px' }}>
           <h1 style={{ fontSize: '22px', fontWeight: '700', marginBottom: '6px', color: '#1A1A1A' }}>
-            LaTeX 数式プレビュー
+            LaTeX 数式 → 画像変換
           </h1>
           <p style={{ fontSize: '14px', color: '#666666', margin: 0 }}>
             LaTeX数式をリアルタイムでレンダリング。PNG/SVGでエクスポートできます。

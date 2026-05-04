@@ -192,7 +192,7 @@ export default function Header() {
               alt=""
               style={{ width: "20px", height: "20px" }}
             /> */}
-            TeXプレビュー
+            TeX→画像変換
           </Link>
         </nav>
 
@@ -343,7 +343,7 @@ export default function Header() {
             >
               <img src="/icons/tex-preview.svg" alt="" style={{ width: "24px", height: "24px", flexShrink: 0 }} />
               <span style={{ fontSize: "15px", fontWeight: isPreviewActive ? "600" : "400" }}>
-                TeXプレビュー
+                TeX→画像変換
               </span>
             </Link>
           </div>

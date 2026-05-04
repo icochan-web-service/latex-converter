@@ -11,7 +11,7 @@ export default function Footer() {
           alignItems: "center",
         }}
       >
-        <span style={{ fontSize: "13px", color: "#bbb" }}>© 2026 LaTeX Tools</span>
+        <span style={{ fontSize: "13px", color: "#bbb" }}>© 2026 かんたんTeX</span>
         <div style={{ display: "flex", gap: "24px" }}>
           <a href="/privacy" style={{ fontSize: "13px", color: "#666666", textDecoration: "none" }}>
             プライバシーポリシー

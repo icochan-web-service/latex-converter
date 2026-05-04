@@ -199,7 +199,7 @@ export default function ConvertPage() {
               <p style={{ margin: "0 0 4px", fontSize: "14px" }}>画像をドラッグ＆ドロップ</p>
               <p style={{ margin: "4px 0 0", fontSize: "13px" }}>または クリックして選択</p>
               <p style={{ margin: "10px 0 0", fontSize: "12px", color: "#bbb" }}>
-                PNG / JPG / WEBP・5MB以下
+                PNG / JPG / WEBP・3MB以下
               </p>
             </div>
           )}

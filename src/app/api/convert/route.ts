@@ -98,8 +98,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "画像がありません" }, { status: 400 });
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      return NextResponse.json({ error: "5MB以下の画像を使用してください" }, { status: 400 });
+    if (file.size > 3 * 1024 * 1024) {
+      return NextResponse.json({ error: "3MB以下の画像を使用してください" }, { status: 400 });
     }
 
     const bytes = await file.arrayBuffer();
