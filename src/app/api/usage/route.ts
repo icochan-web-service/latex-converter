@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { auth } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 
 const PLAN_LIMITS: Record<string, number> = {
@@ -22,6 +22,32 @@ export async function GET() {
   }
 
   const supabase = getSupabase();
+
+  // ユーザーレコードの存在確認 → なければ自動INSERT
+  const { data: existingUser } = await supabase
+    .from("users")
+    .select("id")
+    .eq("id", userId)
+    .single();
+
+  if (!existingUser) {
+    try {
+      const clerkUser = await currentUser();
+      const email = clerkUser?.emailAddresses?.[0]?.emailAddress ?? null;
+      const { error: insertError } = await supabase.from("users").insert({
+        id: userId,
+        email,
+        plan: "free",
+        stripe_customer_id: null,
+        stripe_subscription_id: null,
+      });
+      if (insertError) {
+        console.error("ユーザー自動作成エラー:", insertError);
+      }
+    } catch (e) {
+      console.error("ユーザー自動作成中に例外が発生しました:", e);
+    }
+  }
 
   // ユーザーのプランを取得
   const { data: userData } = await supabase
