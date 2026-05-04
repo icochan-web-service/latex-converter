@@ -166,7 +166,57 @@ export default function LandingPage() {
             </div>
           </a>
 
-          {/* カード3：LaTeX数式プレビュー（アクティブ） */}
+          {/* カード3：Word→LaTeX変換（アクティブ） */}
+          <a href="/word_convert" className="tool-card-active">
+            <div style={{ display: "flex", gap: "16px", flex: 1 }}>
+              <div
+                style={{
+                  width: "48px",
+                  height: "48px",
+                  minWidth: "48px",
+                  background: "#0017C1",
+                  borderRadius: "50%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "22px",
+                }}
+              >
+                📄
+              </div>
+              <div>
+                <h2
+                  style={{
+                    fontSize: "16px",
+                    fontWeight: "700",
+                    color: "#1A1A1A",
+                    marginBottom: "8px",
+                    marginTop: 0,
+                  }}
+                >
+                  Word → LaTeX 変換
+                </h2>
+                <p style={{ fontSize: "13px", color: "#666666", lineHeight: "1.7", margin: 0 }}>
+                  Word（.docx）ファイルをPDF経由でLaTeXに高精度変換
+                </p>
+              </div>
+            </div>
+            <div
+              className="card-arrow"
+              style={{
+                position: "absolute",
+                bottom: "20px",
+                right: "24px",
+                color: "#0017C1",
+                fontSize: "18px",
+                fontWeight: "700",
+              }}
+            >
+              →
+            </div>
+          </a>
+
+          {/* カード4：LaTeX数式プレビュー（アクティブ） */}
           <a href="/compile" className="tool-card-active">
             <span
               style={{
