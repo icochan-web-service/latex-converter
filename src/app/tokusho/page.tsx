@@ -7,7 +7,7 @@ export const metadata = {
 };
 
 const ROWS = [
-  { label: "販売業者",       value: <img src="/tokusho-name.png" alt="" style={{ height: '24px' }} /> },
+  { label: "販売業者",       value: <img src="/tokusho-name.png" alt="" style={{ height: '18px' }} /> },
   { label: "所在地",         value: "請求があれば遅滞なく開示します" },
   { label: "電話番号",       value: "請求があれば遅滞なく開示します" },
   { label: "メールアドレス", value: "notebizhack@gmail.com" },
