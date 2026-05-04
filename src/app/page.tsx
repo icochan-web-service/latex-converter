@@ -48,7 +48,7 @@ export default function LandingPage() {
             かんたんなオンラインLaTeXツール
           </h1>
           <p style={{ fontSize: "17px", color: "#666666", lineHeight: "1.9", margin: 0 }}>
-            画像やPDF・Wordから TeX に変換、リアルタイムでのTeXプレビュー。
+            画像やPDF・Wordから TeX に変換、TeX数式を画像変換。
             <br />
             日本語に完全対応しているオンラインツールです。
           </p>
@@ -215,7 +215,7 @@ export default function LandingPage() {
                     marginTop: 0,
                   }}
                 >
-                  LaTeX 数式プレビュー
+                  LaTeX → 画像 変換
                 </h2>
                 <p style={{ fontSize: "13px", color: "#666666", lineHeight: "1.7", margin: 0 }}>
                   数式をリアルタイムでレンダリング。PNG・SVGでエクスポート可能

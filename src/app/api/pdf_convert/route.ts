@@ -106,8 +106,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "PDFファイルを選択してください" }, { status: 400 });
     }
 
-    if (file.size > 10 * 1024 * 1024) {
-      return NextResponse.json({ error: "10MB以下のPDFを使用してください" }, { status: 400 });
+    if (file.size > 4 * 1024 * 1024) {
+      return NextResponse.json({ error: "4MB以下のPDFを使用してください" }, { status: 400 });
     }
 
     const bytes = await file.arrayBuffer();
