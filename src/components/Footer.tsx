@@ -19,6 +19,9 @@ export default function Footer() {
           <a href="/terms" style={{ fontSize: "13px", color: "#666666", textDecoration: "none" }}>
             利用規約
           </a>
+          <a href="/tokusho" style={{ fontSize: "13px", color: "#666666", textDecoration: "none" }}>
+            特定商取引法に基づく表記
+          </a>
         </div>
       </div>
     </footer>

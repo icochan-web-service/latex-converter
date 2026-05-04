@@ -60,7 +60,7 @@ export default function Header() {
             <source srcSet="/logo.svg" type="image/svg+xml" />
             <img
               src="/logo.png"
-              alt="LaTeX Converter"
+              alt="かんたんTeX"
               style={{ height: "36px", width: "auto", display: "block" }}
               onError={(e) => {
                 // logo.svg/png が未配置の場合はテキストロゴにフォールバック
@@ -78,7 +78,7 @@ export default function Header() {
               color: "#0017C1",
             }}
           >
-            LaTeX Converter
+            かんたんTeX
           </span>
         </Link>
 
@@ -192,7 +192,7 @@ export default function Header() {
               alt=""
               style={{ width: "20px", height: "20px" }}
             /> */}
-            TeX→画像変換
+            TeXから画像
           </Link>
         </nav>
 
@@ -343,7 +343,7 @@ export default function Header() {
             >
               <img src="/icons/tex-preview.svg" alt="" style={{ width: "24px", height: "24px", flexShrink: 0 }} />
               <span style={{ fontSize: "15px", fontWeight: isPreviewActive ? "600" : "400" }}>
-                TeX→画像変換
+                TeXから画像
               </span>
             </Link>
           </div>

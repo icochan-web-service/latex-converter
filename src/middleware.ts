@@ -10,6 +10,7 @@ const isPublicRoute = createRouteMatcher([
   "/word_convert",
   "/privacy",
   "/terms",
+  "/tokusho",
   "/compile",
   "/api/webhook",
 ]);

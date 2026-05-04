@@ -359,13 +359,13 @@ export default function LandingPage() {
             {[
               {
                 icon: "🌏",
-                title: "日本語完全対応",
+                title: "日本語に完全対応",
                 desc: "日本語テキストと数式の混在に対応。教科書や試験問題もそのまま変換できます。",
               },
               {
                 icon: "⚡",
                 title: "高精度変換",
-                desc: "Gemini 2.5 Flashによる業界最高水準の精度で複雑な数式を正確に変換します。",
+                desc: "手入力では数分かかる数式を、数秒でLaTeXに変換。論文執筆の時間を大幅に短縮します",
               },
               {
                 icon: "🔒",
