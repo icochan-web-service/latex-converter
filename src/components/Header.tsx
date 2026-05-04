@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { SignInButton, UserButton, useUser } from "@clerk/nextjs";
@@ -13,8 +13,22 @@ const TEX_CONVERT_ITEMS = [
 export default function Header() {
   const { isSignedIn, user } = useUser();
   const pathname = usePathname();
-  const [dropdownOpen, setDropdownOpen]   = useState(false);
+  const [dropdownOpen, setDropdownOpen]     = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [texHover, setTexHover]             = useState(false);
+  const [previewHover, setPreviewHover]     = useState(false);
+  const [hoveredItem, setHoveredItem]       = useState<string | null>(null);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleDropdownEnter = () => {
+    if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    setDropdownOpen(true);
+    setTexHover(true);
+  };
+  const handleDropdownLeave = () => {
+    setTexHover(false);
+    closeTimerRef.current = setTimeout(() => setDropdownOpen(false), 150);
+  };
 
   const isTexConvertActive = TEX_CONVERT_ITEMS.some((i) => i.href === pathname);
   const isPreviewActive    = pathname === "/compile";
@@ -76,13 +90,13 @@ export default function Header() {
           {/* TeX変換 ドロップダウン */}
           <div
             style={{ position: "relative" }}
-            onMouseEnter={() => setDropdownOpen(true)}
-            onMouseLeave={() => setDropdownOpen(false)}
+            onMouseEnter={handleDropdownEnter}
+            onMouseLeave={handleDropdownLeave}
           >
             <button
               className="header-nav-item"
               style={{
-                color: isTexConvertActive ? "#0017C1" : "#1A1A1A",
+                color: (isTexConvertActive || texHover || dropdownOpen) ? "#0017C1" : "#1A1A1A",
                 fontWeight: isTexConvertActive ? "600" : "400",
                 background: isTexConvertActive ? "#F0F4FF" : "transparent",
               }}
@@ -102,11 +116,22 @@ export default function Header() {
               </span>
             </button>
 
+            {/* 透明ブリッジ：ボタンとドロップダウンの隙間をマウスが通過してもcloseしない */}
+            <div
+              style={{
+                position: "absolute",
+                top: "100%",
+                left: 0,
+                width: "100%",
+                height: "8px",
+              }}
+            />
+
             {dropdownOpen && (
               <div
                 style={{
                   position: "absolute",
-                  top: "calc(100% + 4px)",
+                  top: "calc(100% + 8px)",
                   left: "0",
                   background: "#FFFFFF",
                   border: "1px solid #E5E5E5",
@@ -123,12 +148,13 @@ export default function Header() {
                     href={item.href}
                     className="header-dropdown-item"
                     style={{
-                      background: pathname === item.href ? "#EEF2FF" : "transparent",
-                      color: pathname === item.href ? "#0017C1" : "#1A1A1A",
+                      background: pathname === item.href ? "#EEF2FF" : hoveredItem === item.href ? "#F0F3FF" : "transparent",
+                      color: (pathname === item.href || hoveredItem === item.href) ? "#0017C1" : "#1A1A1A",
                     }}
+                    onMouseEnter={() => setHoveredItem(item.href)}
+                    onMouseLeave={() => setHoveredItem(null)}
                     onClick={() => setDropdownOpen(false)}
                   >
-                    {/* アイコン差し替え：public/icons/ を同名ファイルで上書きすると反映されます */}
                     <img
                       src={item.icon}
                       alt=""
@@ -153,10 +179,12 @@ export default function Header() {
             href="/compile"
             className="header-nav-item"
             style={{
-              color: isPreviewActive ? "#0017C1" : "#1A1A1A",
+              color: (isPreviewActive || previewHover) ? "#0017C1" : "#1A1A1A",
               fontWeight: isPreviewActive ? "600" : "400",
               background: isPreviewActive ? "#F0F4FF" : "transparent",
             }}
+            onMouseEnter={() => setPreviewHover(true)}
+            onMouseLeave={() => setPreviewHover(false)}
           >
             {/* アイコン差し替え：public/icons/tex-preview.svg を同名ファイルで上書きすると反映されます */}
             {/* <img
