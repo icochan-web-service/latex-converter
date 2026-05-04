@@ -4,8 +4,8 @@ import { jaJP } from "@clerk/localizations";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "数式 → LaTeX 変換",
-  description: "日本語対応の数式LaTeX変換サービス",
+  title: "かんたんTeX",
+  description: "日本語対応のオンラインLaTeXツール",
 };
 
 export default function RootLayout({

@@ -159,11 +159,11 @@ export default function Header() {
             }}
           >
             {/* アイコン差し替え：public/icons/tex-preview.svg を同名ファイルで上書きすると反映されます */}
-            <img
+            {/* <img
               src="/icons/tex-preview.svg"
               alt=""
               style={{ width: "20px", height: "20px" }}
-            />
+            /> */}
             TeXプレビュー
           </Link>
         </nav>

@@ -45,12 +45,12 @@ export default function LandingPage() {
               marginBottom: "20px",
             }}
           >
-            数式・LaTeXをもっと簡単に。
+            かんたんなオンラインLaTeXツール
           </h1>
           <p style={{ fontSize: "17px", color: "#666666", lineHeight: "1.9", margin: 0 }}>
-            画像から LaTeX に変換、LaTeX を PDF にコンパイル。
+            画像やPDF・Wordから TeX に変換、リアルタイムでのTeXプレビュー。
             <br />
-            日本語対応の数式ツールセット。
+            日本語に完全対応しているオンラインツールです。
           </p>
         </div>
       </section>
