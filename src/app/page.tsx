@@ -69,20 +69,9 @@ export default function LandingPage() {
           {/* カード1：画像→LaTeX（アクティブ） */}
           <a href="/convert" className="tool-card-active" onClick={handleConvert}>
             <div style={{ display: "flex", gap: "16px", flex: 1 }}>
-              <div
-                style={{
-                  width: "48px",
-                  height: "48px",
-                  minWidth: "48px",
-                  background: "#0017C1",
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: "22px",
-                }}
-              >
-                📷
+              <div style={{ width: "48px", height: "48px", minWidth: "48px", flexShrink: 0 }}>
+                {/* アイコン差し替え：public/icons/image-to-tex.svg を同名ファイルで上書きすると反映されます */}
+                <img src="/icons/image-to-tex.svg" alt="" style={{ width: "48px", height: "48px" }} />
               </div>
               <div>
                 <h2
@@ -119,20 +108,9 @@ export default function LandingPage() {
           {/* カード2：PDF→LaTeX変換（アクティブ） */}
           <a href="/pdf_convert" className="tool-card-active">
             <div style={{ display: "flex", gap: "16px", flex: 1 }}>
-              <div
-                style={{
-                  width: "48px",
-                  height: "48px",
-                  minWidth: "48px",
-                  background: "#0017C1",
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: "22px",
-                }}
-              >
-                📑
+              <div style={{ width: "48px", height: "48px", minWidth: "48px", flexShrink: 0 }}>
+                {/* アイコン差し替え：public/icons/pdf-to-tex.svg を同名ファイルで上書きすると反映されます */}
+                <img src="/icons/pdf-to-tex.svg" alt="" style={{ width: "48px", height: "48px" }} />
               </div>
               <div>
                 <h2
@@ -169,20 +147,9 @@ export default function LandingPage() {
           {/* カード3：Word→LaTeX変換（アクティブ） */}
           <a href="/word_convert" className="tool-card-active">
             <div style={{ display: "flex", gap: "16px", flex: 1 }}>
-              <div
-                style={{
-                  width: "48px",
-                  height: "48px",
-                  minWidth: "48px",
-                  background: "#0017C1",
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: "22px",
-                }}
-              >
-                📄
+              <div style={{ width: "48px", height: "48px", minWidth: "48px", flexShrink: 0 }}>
+                {/* アイコン差し替え：public/icons/word-to-tex.svg を同名ファイルで上書きすると反映されます */}
+                <img src="/icons/word-to-tex.svg" alt="" style={{ width: "48px", height: "48px" }} />
               </div>
               <div>
                 <h2
@@ -234,23 +201,9 @@ export default function LandingPage() {
               無料
             </span>
             <div style={{ display: "flex", gap: "16px", flex: 1 }}>
-              <div
-                style={{
-                  width: "48px",
-                  height: "48px",
-                  minWidth: "48px",
-                  background: "#0017C1",
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: "22px",
-                  color: "#fff",
-                  fontWeight: "700",
-                  fontFamily: "serif",
-                }}
-              >
-                ∑
+              <div style={{ width: "48px", height: "48px", minWidth: "48px", flexShrink: 0 }}>
+                {/* アイコン差し替え：public/icons/tex-preview.svg を同名ファイルで上書きすると反映されます */}
+                <img src="/icons/tex-preview.svg" alt="" style={{ width: "48px", height: "48px" }} />
               </div>
               <div>
                 <h2
