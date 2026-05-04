@@ -17,11 +17,15 @@ export default function Header() {
           justifyContent: "space-between",
         }}
       >
-        <a
-          href="/"
-          style={{ fontSize: "18px", fontWeight: "700", color: "#0017C1", textDecoration: "none" }}
-        >
-          LaTeX Tools
+        <a href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center" }}>
+          <picture>
+            <source srcSet="/logo.svg" type="image/svg+xml" />
+            <img
+              src="/logo.png"
+              alt="LaTeX Converter"
+              style={{ height: "36px", width: "auto", display: "block" }}
+            />
+          </picture>
         </a>
         <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
           {isSignedIn ? (
