@@ -82,24 +82,24 @@ export default function WordConvertPage() {
               lineHeight: "1.5",
             }}
           >
-            Word（.docx）ファイルをLaTeXに変換する方法
+            Word（.docx） → LaTeX 変換
           </h1>
 
           <p style={{ fontSize: "15px", color: "#444444", lineHeight: "1.8", marginBottom: "24px" }}>
             Word LaTeX 変換（docx latex 変換）を行うには、WordファイルをPDF形式に変換してからアップロードすることで、
             高精度なLaTeX変換が可能です。Word 数式 latex にも対応しており、
             Wordの数式エディタで作成した数式もそのままLaTeXコードに変換できます。
-            以下の手順でWordからLaTeXへの変換を行ってください。
+            まずは，以下の手順でWordからLaTeXへの変換を行ってください。
           </p>
 
           {/* OS タブ */}
           <div>
             <div style={{ display: "flex", gap: "4px" }}>
               <button onClick={() => setOs("windows")} style={os === "windows" ? activeTabStyle : inactiveTabStyle}>
-                🪟 Windows
+                Windows
               </button>
               <button onClick={() => setOs("mac")} style={os === "mac" ? activeTabStyle : inactiveTabStyle}>
-                🍎 Mac
+                Mac
               </button>
             </div>
             <div style={contentStyle}>
@@ -135,7 +135,7 @@ export default function WordConvertPage() {
               marginTop: 0,
             }}
           >
-            PDF → LaTeX 変換ツール
+            ② PDF → LaTeX に変換する
           </h2>
           <p style={{ fontSize: "14px", color: "#666666", margin: "0 0 24px" }}>
             wordからlatexへの変換はPDF経由で行います。準備したPDFをこちらにアップロードしてください。
