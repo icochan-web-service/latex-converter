@@ -5,6 +5,7 @@ import { Toaster, toast } from "sonner";
 import { useUser, useClerk, SignInButton } from "@clerk/nextjs";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import LatexPreview from "@/components/LatexPreview";
 
 type OutputMode = "simple" | "full";
 
@@ -18,6 +19,7 @@ export default function ConvertPage() {
   const [outputMode, setOutputMode] = useState<OutputMode>("simple");
   const [copied, setCopied] = useState(false);
   const [usage, setUsage] = useState<{ used: number; limit: number; remaining: number } | null>(null);
+  const [loadingStep, setLoadingStep] = useState<"upload" | "ai" | null>(null);
 
   useEffect(() => {
     if (!isSignedIn) return;
@@ -47,6 +49,8 @@ export default function ConvertPage() {
       return;
     }
     setLoading(true);
+    setLoadingStep("upload");
+    const uploadTimer = setTimeout(() => setLoadingStep("ai"), 600);
     try {
       const form = new FormData();
       form.append("image", imageFile);
@@ -61,7 +65,9 @@ export default function ConvertPage() {
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : "変換に失敗しました");
     } finally {
+      clearTimeout(uploadTimer);
       setLoading(false);
+      setLoadingStep(null);
     }
   };
 
@@ -100,12 +106,13 @@ export default function ConvertPage() {
       <main
         style={{
           flex: 1,
-          maxWidth: "720px",
+          maxWidth: "1080px",
           width: "100%",
           margin: "0 auto",
           padding: "48px 40px",
         }}
       >
+        <div style={{ maxWidth: "640px" }}>
         {/* ページタイトル + 利用状況 / ログインCTA */}
         <div
           style={{
@@ -267,6 +274,29 @@ export default function ConvertPage() {
             : "LaTeX に変換"}
         </button>
 
+        {/* プログレスバー */}
+        {loadingStep && (
+          <div style={{ marginBottom: "16px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px", flexWrap: "wrap" }}>
+              <span style={{ fontSize: "12px", color: loadingStep === "upload" ? "#0017C1" : "#999", fontWeight: loadingStep === "upload" ? "600" : "400" }}>
+                ① アップロード中
+              </span>
+              <span style={{ fontSize: "11px", color: "#ccc" }}>›</span>
+              <span style={{ fontSize: "12px", color: loadingStep === "ai" ? "#0017C1" : "#999", fontWeight: loadingStep === "ai" ? "600" : "400" }}>
+                ② AI変換中
+              </span>
+              <span style={{ fontSize: "11px", color: "#ccc" }}>›</span>
+              <span style={{ fontSize: "12px", color: "#999" }}>③ 完了</span>
+            </div>
+            <p style={{ fontSize: "13px", color: "#555", margin: "0 0 8px" }}>
+              {loadingStep === "upload" ? "ファイルをアップロード中..." : "AIが変換中です。しばらくお待ちください..."}
+            </p>
+            <div style={{ width: "100%", height: "6px", backgroundColor: "#E5E5E5", borderRadius: "4px", overflow: "hidden" }}>
+              <div style={{ height: "100%", backgroundColor: "#0017C1", borderRadius: "4px", width: "40%", animation: "indeterminate 1.5s infinite ease-in-out" }} />
+            </div>
+          </div>
+        )}
+
         {/* アップグレード案内 */}
         {isSignedIn && usage?.remaining === 0 && (
           <div style={{ textAlign: "center", marginBottom: "16px" }}>
@@ -346,6 +376,8 @@ export default function ConvertPage() {
           }}
         />
         <p style={{ fontSize: "12px", color: "#bbb", marginTop: "6px" }}>結果は直接編集できます</p>
+        <LatexPreview latex={latex} />
+        </div>
       </main>
 
       <Footer />

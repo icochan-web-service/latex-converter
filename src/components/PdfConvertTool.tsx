@@ -1,5 +1,6 @@
 "use client";
 import { useState, useCallback, useEffect } from "react";
+import LatexPreview from "@/components/LatexPreview";
 import { useDropzone } from "react-dropzone";
 import { Toaster, toast } from "sonner";
 import { useUser, useClerk, SignInButton } from "@clerk/nextjs";
@@ -26,6 +27,7 @@ export default function PdfConvertTool({ redirectUrl = "/pdf_convert" }: Props) 
   const [copied, setCopied] = useState(false);
   const [usage, setUsage] = useState<{ used: number; limit: number; remaining: number } | null>(null);
   const [limitError, setLimitError] = useState<{ required: number; remaining: number } | null>(null);
+  const [loadingStep, setLoadingStep] = useState<"upload" | "ai" | null>(null);
 
   useEffect(() => {
     if (!isSignedIn) return;
@@ -55,6 +57,8 @@ export default function PdfConvertTool({ redirectUrl = "/pdf_convert" }: Props) 
       return;
     }
     setLoading(true);
+    setLoadingStep("upload");
+    const uploadTimer = setTimeout(() => setLoadingStep("ai"), 600);
     try {
       const form = new FormData();
       form.append("pdf", pdfFile);
@@ -76,7 +80,9 @@ export default function PdfConvertTool({ redirectUrl = "/pdf_convert" }: Props) 
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : "変換に失敗しました");
     } finally {
+      clearTimeout(uploadTimer);
       setLoading(false);
+      setLoadingStep(null);
     }
   };
 
@@ -237,6 +243,29 @@ export default function PdfConvertTool({ redirectUrl = "/pdf_convert" }: Props) 
           : "LaTeX に変換"}
       </button>
 
+      {/* プログレスバー */}
+      {loadingStep && (
+        <div style={{ marginBottom: "16px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px", flexWrap: "wrap" }}>
+            <span style={{ fontSize: "12px", color: loadingStep === "upload" ? "#0017C1" : "#999", fontWeight: loadingStep === "upload" ? "600" : "400" }}>
+              ① アップロード中
+            </span>
+            <span style={{ fontSize: "11px", color: "#ccc" }}>›</span>
+            <span style={{ fontSize: "12px", color: loadingStep === "ai" ? "#0017C1" : "#999", fontWeight: loadingStep === "ai" ? "600" : "400" }}>
+              ② AI変換中
+            </span>
+            <span style={{ fontSize: "11px", color: "#ccc" }}>›</span>
+            <span style={{ fontSize: "12px", color: "#999" }}>③ 完了</span>
+          </div>
+          <p style={{ fontSize: "13px", color: "#555", margin: "0 0 8px" }}>
+            {loadingStep === "upload" ? "ファイルをアップロード中..." : "PDFをAIが変換中です。しばらくお待ちください..."}
+          </p>
+          <div style={{ width: "100%", height: "6px", backgroundColor: "#E5E5E5", borderRadius: "4px", overflow: "hidden" }}>
+            <div style={{ height: "100%", backgroundColor: "#0017C1", borderRadius: "4px", width: "40%", animation: "indeterminate 1.5s infinite ease-in-out" }} />
+          </div>
+        </div>
+      )}
+
       {/* ページ数不足エラー */}
       {limitError && (
         <div
@@ -356,6 +385,7 @@ export default function PdfConvertTool({ redirectUrl = "/pdf_convert" }: Props) 
         }}
       />
       <p style={{ fontSize: "12px", color: "#bbb", marginTop: "6px" }}>結果は直接編集できます</p>
+      <LatexPreview latex={latex} />
     </>
   );
 }

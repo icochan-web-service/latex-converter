@@ -19,6 +19,8 @@ const PLAN_LIMITS: Record<string, number> = {
   pro: 5000,
 };
 
+const MAX_PDF_PAGES = 20;
+
 const SYSTEM_PROMPT_SIMPLE = `あなたは数式OCRの専門家です。
 PDFに含まれる数式・テキストをLaTeXに変換してください。
 
@@ -73,30 +75,18 @@ export async function POST(req: NextRequest) {
     const plan = userData?.plan ?? "free";
     const limit = PLAN_LIMITS[plan] ?? 10;
 
-    // 今月の変換回数チェック
     const now = new Date();
     const startOfMonth = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1));
 
-    const { count } = await supabase
-      .from("conversions")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", userId)
-      .gte("created_at", startOfMonth.toISOString());
-
-    const used = count ?? 0;
-    const remaining = Math.max(0, limit - used);
-
-    if (remaining === 0) {
-      return NextResponse.json(
-        { error: `今月の変換回数（${limit}回）を使い切りました。プランのアップグレードをご検討ください。` },
-        { status: 403 }
-      );
-    }
-
-    // PDFファイル取得
+    // ファイルバリデーション（INSERT前に実施）
     const formData = await req.formData();
     const file = formData.get("pdf") as File;
     const outputMode = (formData.get("outputMode") as string) ?? "simple";
+
+    const ALLOWED_OUTPUT_MODES = ["full", "simple"];
+    if (!ALLOWED_OUTPUT_MODES.includes(outputMode)) {
+      return NextResponse.json({ error: "不正なパラメータです" }, { status: 400 });
+    }
 
     if (!file) {
       return NextResponse.json({ error: "PDFファイルがありません" }, { status: 400 });
@@ -110,19 +100,61 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "4MB以下のPDFを使用してください" }, { status: 400 });
     }
 
-    const bytes = await file.arrayBuffer();
+    const arrayBuffer = await file.arrayBuffer();
+    const bytes = new Uint8Array(arrayBuffer);
 
-    // PDFページ数を取得
-    let pageCount = 1;
-    try {
-      const pdfDoc = await PDFDocument.load(bytes, { ignoreEncryption: true });
-      pageCount = pdfDoc.getPageCount();
-    } catch {
-      // ページ数取得に失敗した場合は1として扱う
+    // マジックバイト検証（PDFは必ず %PDF で始まる）
+    const header = String.fromCharCode(bytes[0], bytes[1], bytes[2], bytes[3]);
+    if (header !== "%PDF") {
+      return NextResponse.json(
+        { error: "PDFファイルではありません。" },
+        { status: 400 }
+      );
     }
 
-    // 残り枚数がページ数に足りない場合はエラー
-    if (remaining < pageCount) {
+    // PDFページ数を取得（失敗した場合はエラーを返す）
+    let pageCount: number;
+    try {
+      const pdfDoc = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
+      pageCount = pdfDoc.getPageCount();
+    } catch {
+      return NextResponse.json(
+        { error: "PDFファイルの読み込みに失敗しました。正常なPDFファイルをアップロードしてください。" },
+        { status: 400 }
+      );
+    }
+
+    // ページ数上限チェック
+    if (pageCount > MAX_PDF_PAGES) {
+      return NextResponse.json(
+        { error: `PDFは${MAX_PDF_PAGES}ページ以内のファイルのみ対応しています。（このPDFは${pageCount}ページです）` },
+        { status: 400 }
+      );
+    }
+
+    // 1. 先にconversionsテーブルにINSERT（TOCTOU競合状態対策）
+    const records = Array.from({ length: pageCount }, () => ({ user_id: userId }));
+    const { data: inserted } = await supabase
+      .from("conversions")
+      .insert(records)
+      .select("id");
+    const insertedIds: string[] = inserted?.map((r: { id: string }) => r.id) ?? [];
+
+    // 2. INSERT後に今月の合計使用枚数を再カウント
+    const { count: totalCount } = await supabase
+      .from("conversions")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .gte("created_at", startOfMonth.toISOString());
+
+    const newTotal = totalCount ?? 0;
+
+    // 3. 合計が上限を超えていたらINSERTをロールバックして429を返す
+    if (newTotal > limit) {
+      if (insertedIds.length > 0) {
+        await supabase.from("conversions").delete().in("id", insertedIds);
+      }
+      const remaining = Math.max(0, limit - (newTotal - pageCount));
       return NextResponse.json(
         {
           error: "conversion_limit_exceeded",
@@ -130,11 +162,12 @@ export async function POST(req: NextRequest) {
           required: pageCount,
           remaining,
         },
-        { status: 403 }
+        { status: 429 }
       );
     }
 
-    const base64 = Buffer.from(bytes).toString("base64");
+    // 4. Gemini APIを呼び出す
+    const base64 = Buffer.from(arrayBuffer).toString("base64");
 
     const systemPrompt = outputMode === "full" ? SYSTEM_PROMPT_FULL : SYSTEM_PROMPT_SIMPLE;
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
@@ -151,16 +184,12 @@ export async function POST(req: NextRequest) {
 
     const latex = result.response.text().trim();
 
-    // ページ数分の変換履歴を一括記録
-    const records = Array.from({ length: pageCount }, () => ({ user_id: userId }));
-    await supabase.from("conversions").insert(records);
-
     return NextResponse.json({ latex, plan, limit, pageCount });
 
   } catch (error: unknown) {
-    console.error(error);
+    console.error("[api/pdf_convert] エラー:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "変換に失敗しました" },
+      { error: "変換に失敗しました。しばらく経ってから再度お試しください。" },
       { status: 500 }
     );
   }

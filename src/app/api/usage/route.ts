@@ -16,93 +16,105 @@ function getSupabase() {
 }
 
 export async function GET() {
-  const { userId } = await auth();
-  if (!userId) {
-    return NextResponse.json({ error: "未認証です" }, { status: 401 });
-  }
-
-  const supabase = getSupabase();
-
-  // ユーザーレコードの存在確認 → なければ自動INSERT
-  const { data: existingUser } = await supabase
-    .from("users")
-    .select("id")
-    .eq("id", userId)
-    .single();
-
-  if (!existingUser) {
-    try {
-      const clerkUser = await currentUser();
-      const email = clerkUser?.emailAddresses?.[0]?.emailAddress ?? null;
-      const { error: insertError } = await supabase.from("users").insert({
-        id: userId,
-        email,
-        plan: "free",
-        stripe_customer_id: null,
-        stripe_subscription_id: null,
-      });
-      if (insertError) {
-        console.error("ユーザー自動作成エラー:", insertError);
-      }
-    } catch (e) {
-      console.error("ユーザー自動作成中に例外が発生しました:", e);
+  try {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: "未認証です" }, { status: 401 });
     }
+
+    const supabase = getSupabase();
+
+    // ユーザーレコードの存在確認 → なければ自動INSERT
+    const { data: existingUser } = await supabase
+      .from("users")
+      .select("id")
+      .eq("id", userId)
+      .single();
+
+    if (!existingUser) {
+      try {
+        const clerkUser = await currentUser();
+        const email = clerkUser?.emailAddresses?.[0]?.emailAddress ?? null;
+        const { error: insertError } = await supabase.from("users").insert({
+          id: userId,
+          email,
+          plan: "free",
+          stripe_customer_id: null,
+          stripe_subscription_id: null,
+        });
+        if (insertError) {
+          console.error("ユーザー自動作成エラー:", insertError);
+        }
+      } catch (e) {
+        console.error("ユーザー自動作成中に例外が発生しました:", e);
+      }
+    }
+
+    // ユーザーのプランを取得
+    const { data: userData } = await supabase
+      .from("users")
+      .select("plan")
+      .eq("id", userId)
+      .single();
+
+    const plan = userData?.plan ?? "free";
+    const limit = PLAN_LIMITS[plan] ?? 10;
+
+    // 今月の変換枚数を取得
+    const now = new Date();
+    const startOfMonth = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1));
+
+    const { count, error } = await supabase
+      .from("conversions")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .gte("created_at", startOfMonth.toISOString());
+
+    if (error) {
+      console.error("[api/usage] Supabase error:", error);
+      return NextResponse.json({ error: "データの取得に失敗しました" }, { status: 500 });
+    }
+
+    const used = count ?? 0;
+
+    return NextResponse.json({
+      used,
+      limit,
+      remaining: Math.max(0, limit - used),
+      plan,
+    });
+  } catch (error: unknown) {
+    console.error("[api/usage GET] 予期せぬエラー:", error);
+    return NextResponse.json({ error: "サーバーエラーが発生しました" }, { status: 500 });
   }
-
-  // ユーザーのプランを取得
-  const { data: userData } = await supabase
-    .from("users")
-    .select("plan")
-    .eq("id", userId)
-    .single();
-
-  const plan = userData?.plan ?? "free";
-  const limit = PLAN_LIMITS[plan] ?? 10;
-
-  // 今月の変換枚数を取得
-  const now = new Date();
-  const startOfMonth = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1));
-
-  const { count, error } = await supabase
-    .from("conversions")
-    .select("*", { count: "exact", head: true })
-    .eq("user_id", userId)
-    .gte("created_at", startOfMonth.toISOString());
-
-  if (error) {
-    console.error("Supabase error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  const used = count ?? 0;
-
-  return NextResponse.json({
-    used,
-    limit,
-    remaining: Math.max(0, limit - used),
-    plan,
-  });
 }
 
 export async function POST(req: NextRequest) {
-  const { userId } = await auth();
-  if (!userId) {
-    return NextResponse.json({ error: "未認証です" }, { status: 401 });
+  try {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: "未認証です" }, { status: 401 });
+    }
+
+    const body = await req.json().catch(() => ({}));
+    const count = body.count ?? 1;
+
+    if (typeof count !== "number" || count < 1 || count > 100 || !Number.isInteger(count)) {
+      return NextResponse.json({ error: "不正なリクエストです" }, { status: 400 });
+    }
+
+    const supabase = getSupabase();
+    const records = Array.from({ length: count }, () => ({ user_id: userId }));
+    const { error } = await supabase.from("conversions").insert(records);
+
+    if (error) {
+      console.error("[api/usage] Supabase error:", error);
+      return NextResponse.json({ error: "データの記録に失敗しました" }, { status: 500 });
+    }
+
+    return NextResponse.json({ ok: true, consumed: count });
+  } catch (error: unknown) {
+    console.error("[api/usage POST] 予期せぬエラー:", error);
+    return NextResponse.json({ error: "サーバーエラーが発生しました" }, { status: 500 });
   }
-
-  const body = await req.json().catch(() => ({}));
-  const count =
-    typeof body.count === "number" && body.count > 0
-      ? Math.floor(body.count)
-      : 1;
-
-  const supabase = getSupabase();
-  const records = Array.from({ length: count }, () => ({ user_id: userId }));
-  const { error } = await supabase.from("conversions").insert(records);
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  return NextResponse.json({ ok: true, consumed: count });
 }

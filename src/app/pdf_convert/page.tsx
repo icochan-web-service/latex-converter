@@ -19,21 +19,23 @@ export default function PdfConvertPage() {
       <main
         style={{
           flex: 1,
-          maxWidth: "720px",
+          maxWidth: "1080px",
           width: "100%",
           margin: "0 auto",
           padding: "48px 40px",
         }}
       >
-        <div style={{ marginBottom: "32px" }}>
-          <h1 style={{ fontSize: "22px", fontWeight: "700", marginBottom: "6px", color: "#1A1A1A" }}>
-            PDF → LaTeX 変換
-          </h1>
-          <p style={{ fontSize: "14px", color: "#666666", margin: 0 }}>
-            PDFをアップロードして数式・本文をLaTeXコードに変換
-          </p>
+        <div style={{ maxWidth: "640px" }}>
+          <div style={{ marginBottom: "32px" }}>
+            <h1 style={{ fontSize: "22px", fontWeight: "700", marginBottom: "6px", color: "#1A1A1A" }}>
+              PDF → LaTeX 変換
+            </h1>
+            <p style={{ fontSize: "14px", color: "#666666", margin: 0 }}>
+              PDFをアップロードして数式・本文をLaTeXコードに変換
+            </p>
+          </div>
+          <PdfConvertTool redirectUrl="/pdf_convert" />
         </div>
-        <PdfConvertTool redirectUrl="/pdf_convert" />
       </main>
       <Footer />
     </div>

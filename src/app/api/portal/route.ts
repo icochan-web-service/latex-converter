@@ -26,10 +26,17 @@ export async function POST() {
     return NextResponse.json({ error: "有料プランのサブスクリプションが見つかりません" }, { status: 404 });
   }
 
-  const session = await stripe.billingPortal.sessions.create({
-    customer: userData.stripe_customer_id,
-    return_url: `${process.env.NEXT_PUBLIC_APP_URL}/account`,
-  });
-
-  return NextResponse.json({ url: session.url });
+  try {
+    const session = await stripe.billingPortal.sessions.create({
+      customer: userData.stripe_customer_id,
+      return_url: `${process.env.NEXT_PUBLIC_APP_URL}/account`,
+    });
+    return NextResponse.json({ url: session.url });
+  } catch (error: unknown) {
+    console.error("[api/portal] Stripeエラー:", error);
+    return NextResponse.json(
+      { error: "ポータルの起動に失敗しました。しばらく経ってから再度お試しください。" },
+      { status: 500 }
+    );
+  }
 }

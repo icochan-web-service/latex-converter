@@ -18,6 +18,8 @@ const PLAN_LIMITS: Record<string, number> = {
   pro: 5000,
 };
 
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+
 const SYSTEM_PROMPT_SIMPLE = `あなたは数式OCRの専門家です。
 画像に含まれる数式・テキストをLaTeXに変換してください。
 
@@ -72,36 +74,61 @@ export async function POST(req: NextRequest) {
     const plan = userData?.plan ?? "free";
     const limit = PLAN_LIMITS[plan] ?? 10;
 
-    // 今月の変換枚数チェック
     const now = new Date();
     const startOfMonth = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1));
 
-    const { count } = await supabase
-      .from("conversions")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", userId)
-      .gte("created_at", startOfMonth.toISOString());
-
-    if ((count ?? 0) >= limit) {
-      return NextResponse.json(
-        { error: `今月の変換枚数（${limit}枚）を使い切りました。プランのアップグレードをご検討ください。` },
-        { status: 403 }
-      );
-    }
-
-    // 画像取得
+    // ファイルバリデーション（INSERT前に実施）
     const formData = await req.formData();
     const file = formData.get("image") as File;
     const outputMode = (formData.get("outputMode") as string) ?? "simple";
 
+    const ALLOWED_OUTPUT_MODES = ["full", "simple"];
+    if (!ALLOWED_OUTPUT_MODES.includes(outputMode)) {
+      return NextResponse.json({ error: "不正なパラメータです" }, { status: 400 });
+    }
+
     if (!file) {
       return NextResponse.json({ error: "画像がありません" }, { status: 400 });
+    }
+
+    const mimeType = file.type;
+    if (!ALLOWED_IMAGE_TYPES.includes(mimeType)) {
+      return NextResponse.json(
+        { error: "対応していないファイル形式です。JPEG・PNG・WebP・GIFのみ対応しています。" },
+        { status: 400 }
+      );
     }
 
     if (file.size > 3 * 1024 * 1024) {
       return NextResponse.json({ error: "3MB以下の画像を使用してください" }, { status: 400 });
     }
 
+    // 1. 先にconversionsテーブルにINSERT（TOCTOU競合状態対策）
+    const { data: inserted } = await supabase
+      .from("conversions")
+      .insert({ user_id: userId })
+      .select("id");
+    const insertedId: string | undefined = inserted?.[0]?.id;
+
+    // 2. INSERT後に今月の合計使用枚数を再カウント
+    const { count: totalCount } = await supabase
+      .from("conversions")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .gte("created_at", startOfMonth.toISOString());
+
+    // 3. 合計が上限を超えていたらINSERTをロールバックして429を返す
+    if ((totalCount ?? 0) > limit) {
+      if (insertedId) {
+        await supabase.from("conversions").delete().eq("id", insertedId);
+      }
+      return NextResponse.json(
+        { error: `今月の変換枚数（${limit}枚）を使い切りました。プランのアップグレードをご検討ください。` },
+        { status: 429 }
+      );
+    }
+
+    // 4. Gemini APIを呼び出す
     const bytes = await file.arrayBuffer();
     const base64 = Buffer.from(bytes).toString("base64");
 
@@ -112,7 +139,7 @@ export async function POST(req: NextRequest) {
       systemPrompt,
       {
         inlineData: {
-          mimeType: file.type as "image/jpeg" | "image/png" | "image/webp",
+          mimeType: mimeType as "image/jpeg" | "image/png" | "image/webp" | "image/gif",
           data: base64,
         },
       },
@@ -120,15 +147,12 @@ export async function POST(req: NextRequest) {
 
     const latex = result.response.text().trim();
 
-    // 変換履歴を記録
-    await supabase.from("conversions").insert({ user_id: userId });
-
     return NextResponse.json({ latex, plan, limit });
 
-  } catch (error: any) {
-    console.error(error);
+  } catch (error: unknown) {
+    console.error("[api/convert] エラー:", error);
     return NextResponse.json(
-      { error: error.message || "変換に失敗しました" },
+      { error: "変換に失敗しました。しばらく経ってから再度お試しください。" },
       { status: 500 }
     );
   }

@@ -91,12 +91,13 @@ export default function WordConvertPage() {
       <main
         style={{
           flex: 1,
-          maxWidth: "720px",
+          maxWidth: "1080px",
           width: "100%",
           margin: "0 auto",
           padding: "48px 40px 64px",
         }}
       >
+        <div style={{ maxWidth: "640px" }}>
         {/* ─── 説明セクション ─── */}
         <div style={{ marginBottom: "48px" }}>
           <h1
@@ -260,6 +261,7 @@ export default function WordConvertPage() {
             ))}
           </div>
         </section>
+        </div>
       </main>
 
       <Footer />

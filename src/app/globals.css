@@ -115,6 +115,11 @@ body {
   background: #F5F7FF;
 }
 
+@keyframes indeterminate {
+  0%   { transform: translateX(-150%); }
+  100% { transform: translateX(350%); }
+}
+
 .tool-card-inactive {
   border: 1px solid #E5E5E5;
   border-radius: 8px;
