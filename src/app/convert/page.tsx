@@ -275,13 +275,13 @@ export default function ConvertPage() {
               </span>
               <span style={{ fontSize: "11px", color: "#ccc" }}>›</span>
               <span style={{ fontSize: "12px", color: loadingStep === "ai" ? "#0017C1" : "#999", fontWeight: loadingStep === "ai" ? "600" : "400" }}>
-                ② AI変換中
+                ② 変換中
               </span>
               <span style={{ fontSize: "11px", color: "#ccc" }}>›</span>
               <span style={{ fontSize: "12px", color: "#999" }}>③ 完了</span>
             </div>
             <p style={{ fontSize: "13px", color: "#555", margin: "0 0 8px" }}>
-              {loadingStep === "upload" ? "ファイルをアップロード中..." : "AIが変換中です。しばらくお待ちください..."}
+              {loadingStep === "upload" ? "ファイルをアップロード中..." : "変換中です。しばらくお待ちください..."}
             </p>
             <div style={{ width: "100%", height: "6px", backgroundColor: "#E5E5E5", borderRadius: "4px", overflow: "hidden" }}>
               <div style={{ height: "100%", backgroundColor: "#0017C1", borderRadius: "4px", width: "40%", animation: "indeterminate 1.5s infinite ease-in-out" }} />

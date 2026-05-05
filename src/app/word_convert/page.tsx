@@ -3,20 +3,8 @@ import { useState } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import PdfConvertTool from "@/components/PdfConvertTool";
-
-type OsTab = "windows" | "mac";
-
-const WIN_STEPS = [
-  "Wordでファイルを開く",
-  "「ファイル」→「名前を付けて保存」をクリック",
-  "ファイル形式で「PDF」を選択して保存",
-];
-
-const MAC_STEPS = [
-  "Wordでファイルを開く",
-  "「ファイル」→「プリント」をクリック",
-  "左下の「PDF」→「PDFとして保存」を選択して保存",
-];
+import WindowsPdfSteps from "@/components/WindowsPdfSteps";
+import MacPdfSteps from "@/components/MacPdfSteps";
 
 const FAQ_ITEMS = [
   {
@@ -33,47 +21,39 @@ const FAQ_ITEMS = [
   },
 ];
 
-const PlaceholderImage = () => (
-  <div
-    style={{
-      width: "100%",
-      maxWidth: "480px",
-      height: "240px",
-      background: "#F5F5F5",
-      border: "1px solid #E5E5E5",
-      borderRadius: "4px",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      color: "#aaa",
-      fontSize: "14px",
-      gap: "8px",
-      margin: "12px 0",
-    }}
-  >
-    <span style={{ fontSize: "20px" }}>📷</span>
-    GIF準備中
-  </div>
-);
-
 export default function WordConvertPage() {
-  const [activeTab, setActiveTab] = useState<OsTab>("windows");
+  const [os, setOs] = useState<"windows" | "mac">("windows");
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
-  const tabBtn = (tab: OsTab): React.CSSProperties => ({
+  const activeTabStyle: React.CSSProperties = {
     padding: "8px 24px",
+    backgroundColor: "#0017C1",
+    color: "#FFFFFF",
+    border: "none",
+    borderRadius: "4px 4px 0 0",
     fontSize: "14px",
-    fontWeight: activeTab === tab ? "700" : "400",
-    color: activeTab === tab ? "#0017C1" : "#666666",
-    background: activeTab === tab ? "#FFFFFF" : "#F5F5F5",
-    border: "1px solid #E5E5E5",
-    borderBottom: activeTab === tab ? "1px solid #FFFFFF" : "1px solid #E5E5E5",
+    fontWeight: "600",
     cursor: "pointer",
-    transition: "all 0.12s",
-    marginBottom: activeTab === tab ? "-1px" : "0",
-  });
+  };
 
-  const steps = activeTab === "windows" ? WIN_STEPS : MAC_STEPS;
+  const inactiveTabStyle: React.CSSProperties = {
+    padding: "8px 24px",
+    backgroundColor: "#F5F5F5",
+    color: "#666666",
+    border: "1px solid #E5E5E5",
+    borderBottom: "none",
+    borderRadius: "4px 4px 0 0",
+    fontSize: "14px",
+    cursor: "pointer",
+  };
+
+  const contentStyle: React.CSSProperties = {
+    border: "1px solid #E5E5E5",
+    borderRadius: "0 4px 4px 4px",
+    padding: "24px",
+    backgroundColor: "#FFFFFF",
+    overflowX: "auto",
+  };
 
   return (
     <div
@@ -113,44 +93,18 @@ export default function WordConvertPage() {
           </p>
 
           {/* OS タブ */}
-          <div style={{ borderBottom: "1px solid #E5E5E5", marginBottom: "0" }}>
-            <div style={{ display: "flex", gap: "0" }}>
-              <button onClick={() => setActiveTab("windows")} style={{ ...tabBtn("windows"), borderRadius: "4px 0 0 0" }}>
-                Windows
+          <div>
+            <div style={{ display: "flex", gap: "4px" }}>
+              <button onClick={() => setOs("windows")} style={os === "windows" ? activeTabStyle : inactiveTabStyle}>
+                🪟 Windows
               </button>
-              <button onClick={() => setActiveTab("mac")} style={{ ...tabBtn("mac"), borderRadius: "0 4px 0 0", borderLeft: "none" }}>
-                Mac
+              <button onClick={() => setOs("mac")} style={os === "mac" ? activeTabStyle : inactiveTabStyle}>
+                🍎 Mac
               </button>
             </div>
-          </div>
-
-          {/* 手順パネル */}
-          <div
-            style={{
-              border: "1px solid #E5E5E5",
-              borderTop: "none",
-              borderRadius: "0 4px 4px 4px",
-              padding: "24px",
-              background: "#FAFAFA",
-              marginBottom: "8px",
-            }}
-          >
-            <ol style={{ margin: 0, padding: "0 0 0 20px", listStyle: "decimal" }}>
-              {steps.map((step, i) => (
-                <li
-                  key={i}
-                  style={{
-                    fontSize: "15px",
-                    color: "#1A1A1A",
-                    lineHeight: "1.7",
-                    marginBottom: i < steps.length - 1 ? "10px" : 0,
-                  }}
-                >
-                  {step}
-                </li>
-              ))}
-            </ol>
-            <PlaceholderImage />
+            <div style={contentStyle}>
+              {os === "windows" ? <WindowsPdfSteps /> : <MacPdfSteps />}
+            </div>
           </div>
         </div>
 
