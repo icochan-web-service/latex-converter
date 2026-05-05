@@ -42,11 +42,11 @@ export default function Header() {
         zIndex: 200,
       }}
     >
+      <div style={{ padding: "0 40px" }}>
       <div
         style={{
           maxWidth: "1080px",
           margin: "0 auto",
-          padding: "0 40px",
           height: "60px",
           display: "flex",
           alignItems: "center",
@@ -296,6 +296,7 @@ export default function Header() {
           </button>
         </div>
       </div>
+    </div>
 
       {/* ── モバイルメニュー ── */}
       {mobileMenuOpen && (

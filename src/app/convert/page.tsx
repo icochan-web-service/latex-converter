@@ -103,16 +103,8 @@ export default function ConvertPage() {
       <Toaster position="top-right" />
       <Header />
 
-      <main
-        style={{
-          flex: 1,
-          maxWidth: "1080px",
-          width: "100%",
-          margin: "0 auto",
-          padding: "48px 40px",
-        }}
-      >
-        <div style={{ maxWidth: "640px" }}>
+      <main style={{ flex: 1, padding: "48px 40px" }}>
+        <div style={{ maxWidth: "1080px", margin: "0 auto" }}>
         {/* ページタイトル + 利用状況 / ログインCTA */}
         <div
           style={{

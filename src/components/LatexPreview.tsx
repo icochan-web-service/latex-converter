@@ -42,22 +42,32 @@ export default function LatexPreview({ latex }: Props) {
 
   return (
     <div style={{ marginTop: "16px" }}>
+      {/* ヘッダーバー */}
       <div
         style={{
+          backgroundColor: "#0017C1",
+          color: "#FFFFFF",
+          padding: "8px 16px",
+          borderRadius: "4px 4px 0 0",
+          fontSize: "13px",
+          fontWeight: "600",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          marginBottom: "8px",
         }}
       >
-        <span style={{ fontSize: "13px", color: "#666666" }}>プレビュー</span>
+        <span>👁 数式プレビュー</span>
+        <span style={{ fontSize: "11px", opacity: 0.8 }}>powered by KaTeX</span>
       </div>
+
+      {/* プレビュー本体 */}
       <div
         ref={containerRef}
         style={{
-          background: "#F9F9F9",
-          border: "1px solid #E5E5E5",
-          borderRadius: "4px",
+          backgroundColor: "#F5F7FF",
+          border: "1px solid #0017C1",
+          borderTop: "none",
+          borderRadius: "0 0 4px 4px",
           padding: "16px",
           minHeight: "80px",
           maxHeight: "400px",
@@ -68,6 +78,7 @@ export default function LatexPreview({ latex }: Props) {
           whiteSpace: "pre-wrap",
         }}
       />
+
       <p style={{ fontSize: "12px", color: "#bbb", marginTop: "6px" }}>
         ※ TikZ・表レイアウト等はプレビュー非対応です
       </p>

@@ -16,16 +16,8 @@ export default function PdfConvertPage() {
       }}
     >
       <Header />
-      <main
-        style={{
-          flex: 1,
-          maxWidth: "1080px",
-          width: "100%",
-          margin: "0 auto",
-          padding: "48px 40px",
-        }}
-      >
-        <div style={{ maxWidth: "640px" }}>
+      <main style={{ flex: 1, padding: "48px 40px" }}>
+        <div style={{ maxWidth: "1080px", margin: "0 auto" }}>
           <div style={{ marginBottom: "32px" }}>
             <h1 style={{ fontSize: "22px", fontWeight: "700", marginBottom: "6px", color: "#1A1A1A" }}>
               PDF → LaTeX 変換
