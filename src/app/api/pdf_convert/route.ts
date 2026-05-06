@@ -4,6 +4,9 @@ import { auth } from "@clerk/nextjs/server";
 import { createClient } from "@supabase/supabase-js";
 import { PDFDocument } from "pdf-lib";
 
+// Fluid Compute有効時のデフォルト300秒が適用されるが念のため明示
+export const maxDuration = 300;
+
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 function getSupabase() {
@@ -35,35 +38,27 @@ PDFに含まれる数式・テキストをLaTeXに変換してください。
 - 画像に書かれている文字・数式・記号をそのままLaTeXに変換する
 - 問題の解答・計算・推論は一切行わない
 - 画像に存在しない内容を補完・追加しない
-- 図・グラフ・表は可能な範囲でLaTeXで再現し、困難な場合は % [図: ~~] とコメントで示す`
-;
+- 図・グラフ・表は可能な範囲でLaTeXで再現し、困難な場合は % [図: ~~] とコメントで示す`;
 
-const SYSTEM_PROMPT_FULL = `あなたは数式OCRの専門家です。
-PDFに含まれる数式・テキストをLaTeXに変換してください。
-
-ルール：
-- 文中数式は$と$で囲む
-- 別立て数式は必ずalign*環境を使う（$$や\\[\\]は使わない）
-- 日本語テキストはそのまま地の文として出力する
-- ∴ ∵ などの記号はそのまま使う
-- 画像に書かれている文字・数式・記号をそのままLaTeXに変換する
-- 問題の解答・計算・推論は一切行わない
-- 画像に存在しない内容を補完・追加しない
-- 図・グラフ・表は可能な範囲でLaTeXで再現し、困難な場合は % [図: ~~] とコメントで示す
-- 以下のプリアンブルを含む完全な形式で出力する：
-
-\\documentclass[a4paper]{jsarticle}
+const PREAMBLE = `\\documentclass[a4paper]{jsarticle}
 \\usepackage{amsmath}
 \\usepackage{amssymb}
 \\usepackage{bm}
-\\begin{document}
+\\begin{document}`;
 
-（変換した内容）
-
-\\end{document}
-
-- コードブロックや説明文は不要、LaTeXコードだけを返す
-- section*, subsection*, subsubsection*で構造を表現する`;
+async function callGeminiPage(base64: string, systemPrompt: string): Promise<string> {
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+  const result = await model.generateContent([
+    systemPrompt,
+    {
+      inlineData: {
+        mimeType: "application/pdf",
+        data: base64,
+      },
+    },
+  ]);
+  return result.response.text().trim();
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -121,10 +116,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // PDFページ数を取得（失敗した場合はエラーを返す）
+    // PDFを読み込み（ページ数取得・分割に共用）
+    let pdfDoc: PDFDocument;
     let pageCount: number;
     try {
-      const pdfDoc = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
+      pdfDoc = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
       pageCount = pdfDoc.getPageCount();
     } catch {
       return NextResponse.json(
@@ -175,38 +171,48 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 4. Gemini APIを呼び出す
-    const base64 = Buffer.from(arrayBuffer).toString("base64");
+    // 4. PDFを1ページずつに分割
+    const pageBase64Array: string[] = [];
+    for (let i = 0; i < pageCount; i++) {
+      const singlePageDoc = await PDFDocument.create();
+      const [copiedPage] = await singlePageDoc.copyPages(pdfDoc, [i]);
+      singlePageDoc.addPage(copiedPage);
+      const singlePageBytes = await singlePageDoc.save();
+      pageBase64Array.push(Buffer.from(singlePageBytes).toString("base64"));
+    }
 
-    const systemPrompt = outputMode === "full" ? SYSTEM_PROMPT_FULL : SYSTEM_PROMPT_SIMPLE;
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    // 5. 各ページをGemini APIに順番に送信（プリアンブルなしプロンプトで統一）
+    const pageResults: string[] = [];
+    for (let i = 0; i < pageBase64Array.length; i++) {
+      try {
+        const text = await callGeminiPage(pageBase64Array[i], SYSTEM_PROMPT_SIMPLE);
+        pageResults.push(`% ===== ページ ${i + 1} =====\n${text}`);
+      } catch (err) {
+        console.error(`[api/pdf_convert] ページ${i + 1}の変換失敗:`, err);
+        pageResults.push(`% ===== ページ ${i + 1}: 変換失敗 =====`);
+      }
+    }
 
-    let result;
-    try {
-      result = await model.generateContent([
-        systemPrompt,
-        {
-          inlineData: {
-            mimeType: "application/pdf",
-            data: base64,
-          },
-        },
-      ]);
-    } catch (geminiError) {
-      // Gemini APIエラー時はINSERTをロールバックして枠を消費させない
+    // 全ページ失敗した場合はロールバックして500を返す
+    if (pageResults.every((r) => r.includes("変換失敗"))) {
       if (insertedIds.length > 0) {
         await supabase.from("conversions").delete().in("id", insertedIds);
       }
-      console.error("[api/pdf_convert] Gemini APIエラー:", geminiError);
+      console.error("[api/pdf_convert] 全ページの変換に失敗しました");
       return NextResponse.json(
         { error: "変換に失敗しました。しばらく経ってから再度お試しください。" },
         { status: 500 }
       );
     }
 
-    const latex = result.response.text().trim();
+    // 6. ページ結果を結合し、full モードはプリアンブルで包む
+    const body = pageResults.join("\n\n");
+    const latex =
+      outputMode === "full"
+        ? `${PREAMBLE}\n\n${body}\n\n\\end{document}`
+        : body;
 
-    return NextResponse.json({ latex, plan, limit, pageCount });
+    return NextResponse.json({ latex, pageCount });
 
   } catch (error: unknown) {
     console.error("[api/pdf_convert] エラー:", error);

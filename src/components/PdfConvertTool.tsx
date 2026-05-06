@@ -28,6 +28,7 @@ export default function PdfConvertTool({ redirectUrl = "/pdf_convert" }: Props) 
   const [usage, setUsage] = useState<{ used: number; limit: number; remaining: number } | null>(null);
   const [limitError, setLimitError] = useState<{ required: number; remaining: number } | null>(null);
   const [loadingStep, setLoadingStep] = useState<"upload" | "ai" | null>(null);
+  const [pageCount, setPageCount] = useState<number | null>(null);
 
   useEffect(() => {
     if (!isSignedIn) return;
@@ -36,12 +37,21 @@ export default function PdfConvertTool({ redirectUrl = "/pdf_convert" }: Props) 
       .then(setUsage);
   }, [isSignedIn]);
 
-  const onDrop = useCallback((files: File[]) => {
+  const onDrop = useCallback(async (files: File[]) => {
     const file = files[0];
     if (!file) return;
     setPdfFile(file);
     setLatex("");
     setLimitError(null);
+    setPageCount(null);
+    try {
+      const { PDFDocument } = await import("pdf-lib");
+      const ab = await file.arrayBuffer();
+      const doc = await PDFDocument.load(ab, { ignoreEncryption: true });
+      setPageCount(doc.getPageCount());
+    } catch {
+      // ページ数取得失敗はサーバー側バリデーションに委ねる
+    }
   }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -74,6 +84,7 @@ export default function PdfConvertTool({ redirectUrl = "/pdf_convert" }: Props) 
       }
       setLimitError(null);
       setLatex(data.latex);
+      if (data.pageCount) setPageCount(data.pageCount);
       fetch("/api/usage")
         .then((r) => r.json())
         .then(setUsage);
@@ -258,7 +269,11 @@ export default function PdfConvertTool({ redirectUrl = "/pdf_convert" }: Props) 
             <span style={{ fontSize: "12px", color: "#999" }}>③ 完了</span>
           </div>
           <p style={{ fontSize: "13px", color: "#555", margin: "0 0 8px" }}>
-            {loadingStep === "upload" ? "ファイルをアップロード中..." : "PDFをAIが変換中です。しばらくお待ちください..."}
+            {loadingStep === "upload"
+              ? "ファイルをアップロード中..."
+              : pageCount
+              ? `${pageCount}ページを1ページずつ変換中です。しばらくお待ちください...`
+              : "1ページずつ変換中です。しばらくお待ちください..."}
           </p>
           <div style={{ width: "100%", height: "6px", backgroundColor: "#E5E5E5", borderRadius: "4px", overflow: "hidden" }}>
             <div style={{ height: "100%", backgroundColor: "#0017C1", borderRadius: "4px", width: "40%", animation: "indeterminate 1.5s infinite ease-in-out" }} />
