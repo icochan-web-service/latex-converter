@@ -70,11 +70,14 @@ async function callGeminiWithRetry(
     } catch (err: unknown) {
       const status = (err as { status?: number })?.status;
 
-      // レート制限エラーの場合は待機してリトライ
-      if (status === 429 && attempt < maxRetries) {
-        const waitMs = attempt * 2000; // 2秒・4秒と増加
+      // レート制限・一時的なサーバーエラーの場合は待機してリトライ
+      if ((status === 429 || status === 503) && attempt < maxRetries) {
+        const waitMs = status === 503
+          ? attempt * 3000  // 503は3秒・6秒・9秒
+          : attempt * 2000; // 429は2秒・4秒・6秒
         console.warn(
-          `[api/pdf_convert] レート制限。${waitMs}ms後にリトライ (${attempt}/${maxRetries})`
+          `[api/pdf_convert] ${status}エラー。${waitMs}ms後にリトライ`,
+          `(${attempt}/${maxRetries})`
         );
         await new Promise((resolve) => setTimeout(resolve, waitMs));
         continue;
@@ -216,7 +219,7 @@ export async function POST(req: NextRequest) {
           status: errorStatus,
           page: i + 1,
         });
-        pageResults.push(`% ===== ページ ${i + 1}: 変換失敗 (${errorMessage}) =====`);
+        pageResults.push(`% ===== ページ ${i + 1}: 変換失敗 =====`);
       }
     }
 
