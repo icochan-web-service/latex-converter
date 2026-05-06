@@ -1,6 +1,7 @@
 import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
 import { jaJP } from "@clerk/localizations";
+import GoogleAnalytics from "@/components/GoogleAnalytics";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -44,7 +45,10 @@ export default function RootLayout({
             href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css"
           />
         </head>
-        <body>{children}</body>
+        <body>
+          <GoogleAnalytics />
+          {children}
+        </body>
       </html>
     </ClerkProvider>
   );
