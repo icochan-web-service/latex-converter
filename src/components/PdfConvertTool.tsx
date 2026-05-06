@@ -29,6 +29,7 @@ export default function PdfConvertTool({ redirectUrl = "/pdf_convert" }: Props) 
   const [limitError, setLimitError] = useState<{ required: number; remaining: number } | null>(null);
   const [loadingStep, setLoadingStep] = useState<"upload" | "ai" | null>(null);
   const [pageCount, setPageCount] = useState<number | null>(null);
+  const [failedCount, setFailedCount] = useState<number>(0);
 
   useEffect(() => {
     if (!isSignedIn) return;
@@ -44,6 +45,7 @@ export default function PdfConvertTool({ redirectUrl = "/pdf_convert" }: Props) 
     setLatex("");
     setLimitError(null);
     setPageCount(null);
+    setFailedCount(0);
     try {
       const { PDFDocument } = await import("pdf-lib");
       const ab = await file.arrayBuffer();
@@ -85,6 +87,7 @@ export default function PdfConvertTool({ redirectUrl = "/pdf_convert" }: Props) 
       setLimitError(null);
       setLatex(data.latex);
       if (data.pageCount) setPageCount(data.pageCount);
+      setFailedCount(data.failedCount ?? 0);
       fetch("/api/usage")
         .then((r) => r.json())
         .then(setUsage);
@@ -346,6 +349,25 @@ export default function PdfConvertTool({ redirectUrl = "/pdf_convert" }: Props) 
           >
             Basicプランにアップグレード（¥500/月）
           </button>
+        </div>
+      )}
+
+      {/* 一部ページ失敗の通知 */}
+      {!loading && failedCount > 0 && latex && (
+        <div
+          style={{
+            background: "#FFFBEB",
+            border: "1px solid #FCD34D",
+            borderRadius: "4px",
+            padding: "12px 16px",
+            marginBottom: "12px",
+            fontSize: "13px",
+            color: "#92400E",
+          }}
+        >
+          変換完了（{pageCount}ページ中{pageCount! - failedCount}ページ成功・{failedCount}ページ失敗）
+          <br />
+          失敗したページはコメントとして出力されています。
         </div>
       )}
 
