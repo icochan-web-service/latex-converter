@@ -19,7 +19,7 @@ const PLAN_LIMITS: Record<string, number> = {
   pro: 5000,
 };
 
-const MAX_PDF_PAGES = 20;
+const MAX_PDF_PAGES = 10;
 
 const SYSTEM_PROMPT_SIMPLE = `あなたは数式OCRの専門家です。
 PDFに含まれる数式・テキストをLaTeXに変換してください。
@@ -181,15 +181,28 @@ export async function POST(req: NextRequest) {
     const systemPrompt = outputMode === "full" ? SYSTEM_PROMPT_FULL : SYSTEM_PROMPT_SIMPLE;
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-    const result = await model.generateContent([
-      systemPrompt,
-      {
-        inlineData: {
-          mimeType: "application/pdf",
-          data: base64,
+    let result;
+    try {
+      result = await model.generateContent([
+        systemPrompt,
+        {
+          inlineData: {
+            mimeType: "application/pdf",
+            data: base64,
+          },
         },
-      },
-    ]);
+      ]);
+    } catch (geminiError) {
+      // Gemini APIエラー時はINSERTをロールバックして枠を消費させない
+      if (insertedIds.length > 0) {
+        await supabase.from("conversions").delete().in("id", insertedIds);
+      }
+      console.error("[api/pdf_convert] Gemini APIエラー:", geminiError);
+      return NextResponse.json(
+        { error: "変換に失敗しました。しばらく経ってから再度お試しください。" },
+        { status: 500 }
+      );
+    }
 
     const latex = result.response.text().trim();
 

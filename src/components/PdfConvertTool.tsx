@@ -183,7 +183,7 @@ export default function PdfConvertTool({ redirectUrl = "/pdf_convert" }: Props) 
             <div style={{ fontSize: "32px", marginBottom: "10px" }}>📑</div>
             <p style={{ margin: "0 0 4px", fontSize: "14px" }}>PDFをドラッグ＆ドロップ</p>
             <p style={{ margin: "4px 0 0", fontSize: "13px" }}>または クリックして選択</p>
-            <p style={{ margin: "10px 0 0", fontSize: "12px", color: "#bbb" }}>PDF・4MB以下</p>
+            <p style={{ margin: "10px 0 0", fontSize: "12px", color: "#bbb" }}>PDF・4MB以下・10ページ以内</p>
           </div>
         )}
       </div>
