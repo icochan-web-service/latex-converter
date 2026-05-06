@@ -6,6 +6,7 @@ import { Toaster, toast } from "sonner";
 import { useUser, useClerk, SignInButton } from "@clerk/nextjs";
 
 type OutputMode = "simple" | "full";
+type PageStatus = "waiting" | "converting" | "success" | "failed";
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -27,9 +28,9 @@ export default function PdfConvertTool({ redirectUrl = "/pdf_convert" }: Props) 
   const [copied, setCopied] = useState(false);
   const [usage, setUsage] = useState<{ used: number; limit: number; remaining: number } | null>(null);
   const [limitError, setLimitError] = useState<{ required: number; remaining: number } | null>(null);
-  const [loadingStep, setLoadingStep] = useState<"upload" | "ai" | null>(null);
   const [pageCount, setPageCount] = useState<number | null>(null);
   const [failedCount, setFailedCount] = useState<number>(0);
+  const [pageStatuses, setPageStatuses] = useState<PageStatus[]>([]);
 
   useEffect(() => {
     if (!isSignedIn) return;
@@ -46,6 +47,7 @@ export default function PdfConvertTool({ redirectUrl = "/pdf_convert" }: Props) 
     setLimitError(null);
     setPageCount(null);
     setFailedCount(0);
+    setPageStatuses([]);
     try {
       const { PDFDocument } = await import("pdf-lib");
       const ab = await file.arrayBuffer();
@@ -69,34 +71,91 @@ export default function PdfConvertTool({ redirectUrl = "/pdf_convert" }: Props) 
       return;
     }
     setLoading(true);
-    setLoadingStep("upload");
-    const uploadTimer = setTimeout(() => setLoadingStep("ai"), 600);
+    setLatex("");
+    setLimitError(null);
+    setFailedCount(0);
+    setPageStatuses([]);
+
     try {
       const form = new FormData();
       form.append("pdf", pdfFile);
       form.append("outputMode", outputMode);
       const res = await fetch("/api/pdf_convert", { method: "POST", body: form });
-      const data = await res.json();
+
+      // バリデーション・認証エラーはSSE開始前にJSONで返る
       if (!res.ok) {
+        const data = await res.json();
         if (data.error === "conversion_limit_exceeded") {
           setLimitError({ required: data.required, remaining: data.remaining });
           return;
         }
         throw new Error(data.message || data.error || "変換に失敗しました");
       }
-      setLimitError(null);
-      setLatex(data.latex);
-      if (data.pageCount) setPageCount(data.pageCount);
-      setFailedCount(data.failedCount ?? 0);
-      fetch("/api/usage")
-        .then((r) => r.json())
-        .then(setUsage);
+
+      // SSEストリームを読み込む
+      const reader = res.body!.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        // チャンクをバッファに追記し、\n\n で分割してイベントを処理
+        buffer += decoder.decode(value, { stream: true });
+        const parts = buffer.split("\n\n");
+        buffer = parts.pop() ?? ""; // 末尾の不完全なチャンクは次回に持ち越す
+
+        for (const part of parts) {
+          if (!part.startsWith("data: ")) continue;
+          let data: Record<string, unknown>;
+          try {
+            data = JSON.parse(part.slice(6));
+          } catch {
+            continue;
+          }
+
+          if (data.type === "start") {
+            const total = data.totalPages as number;
+            setPageCount(total);
+            setPageStatuses(Array(total).fill("waiting"));
+          }
+
+          if (data.type === "progress") {
+            const page = data.page as number;
+            const status = data.status as PageStatus;
+            setPageStatuses((prev) => {
+              const next = [...prev];
+              next[page - 1] = status;
+              return next;
+            });
+          }
+
+          if (data.type === "complete") {
+            setLatex(data.latex as string);
+            setFailedCount((data.failedCount as number) ?? 0);
+            if (data.pageCount) setPageCount(data.pageCount as number);
+            fetch("/api/usage")
+              .then((r) => r.json())
+              .then(setUsage);
+          }
+
+          if (data.type === "error") {
+            if (data.error === "conversion_limit_exceeded") {
+              setLimitError({
+                required: data.required as number,
+                remaining: data.remaining as number,
+              });
+            } else {
+              toast.error((data.message as string) || "変換に失敗しました");
+            }
+          }
+        }
+      }
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : "変換に失敗しました");
     } finally {
-      clearTimeout(uploadTimer);
       setLoading(false);
-      setLoadingStep(null);
     }
   };
 
@@ -117,6 +176,10 @@ export default function PdfConvertTool({ redirectUrl = "/pdf_convert" }: Props) 
     cursor: "pointer",
     transition: "all 0.12s",
   });
+
+  const completedCount = pageStatuses.filter(
+    (s) => s === "success" || s === "failed"
+  ).length;
 
   return (
     <>
@@ -257,29 +320,72 @@ export default function PdfConvertTool({ redirectUrl = "/pdf_convert" }: Props) 
           : "LaTeX に変換"}
       </button>
 
-      {/* プログレスバー */}
-      {loadingStep && (
+      {/* アップロード中インジケーター（SSE start イベント受信前） */}
+      {loading && pageStatuses.length === 0 && (
         <div style={{ marginBottom: "16px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px", flexWrap: "wrap" }}>
-            <span style={{ fontSize: "12px", color: loadingStep === "upload" ? "#0017C1" : "#999", fontWeight: loadingStep === "upload" ? "600" : "400" }}>
-              ① アップロード中
-            </span>
-            <span style={{ fontSize: "11px", color: "#ccc" }}>›</span>
-            <span style={{ fontSize: "12px", color: loadingStep === "ai" ? "#0017C1" : "#999", fontWeight: loadingStep === "ai" ? "600" : "400" }}>
-              ② AI変換中
-            </span>
-            <span style={{ fontSize: "11px", color: "#ccc" }}>›</span>
-            <span style={{ fontSize: "12px", color: "#999" }}>③ 完了</span>
-          </div>
           <p style={{ fontSize: "13px", color: "#555", margin: "0 0 8px" }}>
-            {loadingStep === "upload"
-              ? "ファイルをアップロード中..."
-              : pageCount
-              ? `${pageCount}ページを1ページずつ変換中です。しばらくお待ちください...`
-              : "1ページずつ変換中です。しばらくお待ちください..."}
+            ファイルをアップロード中...
           </p>
           <div style={{ width: "100%", height: "6px", backgroundColor: "#E5E5E5", borderRadius: "4px", overflow: "hidden" }}>
             <div style={{ height: "100%", backgroundColor: "#0017C1", borderRadius: "4px", width: "40%", animation: "indeterminate 1.5s infinite ease-in-out" }} />
+          </div>
+        </div>
+      )}
+
+      {/* ページごとのリアルタイム進捗 */}
+      {loading && pageStatuses.length > 0 && (
+        <div style={{ marginBottom: "16px" }}>
+          {/* 全体進捗テキスト + プログレスバー */}
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px", fontSize: "13px", color: "#1A1A1A" }}>
+            <span>変換中...</span>
+            <span>{completedCount} / {pageStatuses.length} ページ</span>
+          </div>
+          <div style={{ width: "100%", height: "6px", backgroundColor: "#E5E5E5", borderRadius: "4px", overflow: "hidden", marginBottom: "12px" }}>
+            <div
+              style={{
+                height: "100%",
+                backgroundColor: "#0017C1",
+                borderRadius: "4px",
+                width: `${(completedCount / pageStatuses.length) * 100}%`,
+                transition: "width 0.3s ease",
+              }}
+            />
+          </div>
+
+          {/* ページごとのステータス一覧 */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(80px, 1fr))", gap: "8px" }}>
+            {pageStatuses.map((status, index) => (
+              <div
+                key={index}
+                style={{
+                  padding: "6px 8px",
+                  borderRadius: "4px",
+                  fontSize: "12px",
+                  textAlign: "center",
+                  backgroundColor:
+                    status === "success"    ? "#E8F5E9" :
+                    status === "failed"     ? "#FFEBEE" :
+                    status === "converting" ? "#E8ECFF" :
+                    "#F5F5F5",
+                  color:
+                    status === "success"    ? "#2E7D32" :
+                    status === "failed"     ? "#C62828" :
+                    status === "converting" ? "#0017C1" :
+                    "#999999",
+                  border: `1px solid ${
+                    status === "success"    ? "#A5D6A7" :
+                    status === "failed"     ? "#EF9A9A" :
+                    status === "converting" ? "#B3C5FF" :
+                    "#E5E5E5"
+                  }`,
+                }}
+              >
+                {status === "success"    ? "✓" :
+                 status === "failed"     ? "✕" :
+                 status === "converting" ? "…" : "○"}
+                {" "}P{index + 1}
+              </div>
+            ))}
           </div>
         </div>
       )}
