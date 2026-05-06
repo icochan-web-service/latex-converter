@@ -2,8 +2,14 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
 export const metadata = {
-  title: "特定商取引法に基づく表記 | かんたんTeX",
-  description: "かんたんTeXの特定商取引法に基づく表記ページです。",
+  title: "特定商取引法に基づく表記",
+  description: "かんたんTeXの特定商取引法に基づく表記。販売業者・料金・返金・解約についての情報。",
+  openGraph: {
+    title: "特定商取引法に基づく表記 | かんたんTeX",
+    description: "かんたんTeXの特定商取引法に基づく表記。販売業者・料金・返金・解約についての情報。",
+    url: "/tokusho",
+  },
+  alternates: { canonical: "/tokusho" },
 };
 
 const ROWS = [

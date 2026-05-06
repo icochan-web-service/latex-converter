@@ -369,6 +369,52 @@ export default function ConvertPage() {
         />
         <p style={{ fontSize: "12px", color: "#bbb", marginTop: "6px" }}>結果は直接編集できます</p>
         <LatexPreview latex={latex} />
+
+        {/* FAQ */}
+        <section style={{ marginTop: "64px", borderTop: "1px solid #E5E5E5", paddingTop: "48px" }}>
+          <h2 style={{ fontSize: "20px", fontWeight: "700", color: "#1A1A1A", marginBottom: "28px", marginTop: 0 }}>
+            よくある質問
+          </h2>
+          {[
+            {
+              q: "どの画像形式に対応していますか？",
+              a: "PNG・JPG・JPEG・WEBP形式に対応しています。ファイルサイズは3MB以内でご利用ください。",
+            },
+            {
+              q: "日本語テキストと数式が混在した画像も変換できますか？",
+              a: "はい、対応しています。教科書・試験問題・ノートなど、日本語テキストと数式が混在した画像を高精度でLaTeXに変換します。",
+            },
+            {
+              q: "変換結果の精度はどのくらいですか？",
+              a: "Google Gemini AIを使用しており、印刷された数式は高精度で変換できます。複雑な数式や特殊記号が含まれる場合は、変換後に内容を確認・修正することをお勧めします。",
+            },
+            {
+              q: "出力形式「数式・テキストのみ」と「プリアンブル付き」の違いは？",
+              a: "「数式・テキストのみ」は\\begin{document}〜\\end{document}の中身だけを出力します。「プリアンブル付き」は\\documentclassから始まる完全なLaTeXファイルとして出力します。",
+            },
+            {
+              q: "無料プランで使える変換枚数は？",
+              a: "月10枚まで無料でご利用いただけます。より多く使いたい方はBasicプラン（¥500/月・月500枚）をご利用ください。",
+            },
+          ].map((item, i, arr) => (
+            <div
+              key={i}
+              style={{
+                borderTop: "1px solid #E5E5E5",
+                paddingTop: "20px",
+                paddingBottom: "20px",
+                borderBottom: i === arr.length - 1 ? "1px solid #E5E5E5" : "none",
+              }}
+            >
+              <p style={{ fontSize: "15px", fontWeight: "600", color: "#1A1A1A", margin: "0 0 8px" }}>
+                Q. {item.q}
+              </p>
+              <p style={{ fontSize: "14px", color: "#555", lineHeight: "1.8", margin: 0 }}>
+                A. {item.a}
+              </p>
+            </div>
+          ))}
+        </section>
         </div>
       </main>
 

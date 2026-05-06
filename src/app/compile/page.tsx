@@ -418,6 +418,52 @@ export default function CompilePage() {
             PNG としてダウンロード
           </button>
         </div>
+
+        {/* FAQ */}
+        <section style={{ marginTop: '64px', borderTop: '1px solid #E5E5E5', paddingTop: '48px' }}>
+          <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#1A1A1A', marginBottom: '28px', marginTop: 0 }}>
+            よくある質問
+          </h2>
+          {[
+            {
+              q: 'どのような数式コマンドに対応していますか？',
+              a: 'KaTeXライブラリを使用しており、積分・総和・行列・分数・ギリシャ文字・矢印など、数学・物理でよく使われるLaTeXコマンドに対応しています。ただし、一部のLaTeX拡張パッケージ（TikZなど）はサポートしていません。',
+            },
+            {
+              q: '入力した数式はサーバーに送信されますか？',
+              a: 'いいえ。レンダリングはすべてブラウザ上で完結します。入力内容がサーバーに送信されることはなく、プライバシーの心配がありません。',
+            },
+            {
+              q: 'ログインしなくても使えますか？',
+              a: 'はい。数式プレビュー・PNG/SVGダウンロードはログイン不要で無制限に利用できます。',
+            },
+            {
+              q: 'SVGとPNGどちらでダウンロードするのがおすすめですか？',
+              a: 'プレゼンや印刷物への貼り付けにはSVG（ベクター形式・拡大しても綺麗）がおすすめです。WordやSlideなどラスター画像が必要な場面はPNGをご利用ください。',
+            },
+            {
+              q: 'Display・Inline・Textモードの違いは何ですか？',
+              a: 'Displayモードは数式を独立した行に大きく表示します。Inlineモードは文中に埋め込む形式で小さめに表示します。Textモードは数式記号を通常テキストとしてレンダリングします。',
+            },
+          ].map((item, i, arr) => (
+            <div
+              key={i}
+              style={{
+                borderTop: '1px solid #E5E5E5',
+                paddingTop: '20px',
+                paddingBottom: '20px',
+                borderBottom: i === arr.length - 1 ? '1px solid #E5E5E5' : 'none',
+              }}
+            >
+              <p style={{ fontSize: '15px', fontWeight: '600', color: '#1A1A1A', margin: '0 0 8px' }}>
+                Q. {item.q}
+              </p>
+              <p style={{ fontSize: '14px', color: '#555', lineHeight: '1.8', margin: 0 }}>
+                A. {item.a}
+              </p>
+            </div>
+          ))}
+        </section>
       </main>
 
       <Footer />

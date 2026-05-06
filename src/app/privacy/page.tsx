@@ -1,5 +1,17 @@
+import type { Metadata } from "next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+
+export const metadata: Metadata = {
+  title: "プライバシーポリシー",
+  description: "かんたんTeXのプライバシーポリシー。収集する情報・利用目的・第三者提供について説明します。",
+  openGraph: {
+    title: "プライバシーポリシー | かんたんTeX",
+    description: "かんたんTeXのプライバシーポリシー。収集する情報・利用目的・第三者提供について説明します。",
+    url: "/privacy",
+  },
+  alternates: { canonical: "/privacy" },
+};
 
 export default function Privacy() {
   return (

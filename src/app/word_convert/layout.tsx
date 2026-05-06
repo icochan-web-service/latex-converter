@@ -1,9 +1,14 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Word（.docx）からLaTeX変換 | かんたんTeX",
-  description:
-    "WordファイルをPDFに変換してからLaTeXに変換する方法を解説。研究者・大学院生向けの無料LaTeX変換ツール。Word LaTeX 変換・docx latex 変換に対応。",
+  title: "WordからLaTeX変換",
+  description: "Word（.docx）ファイルをLaTeXに変換する方法を解説。PDF経由で数式・日本語テキストを高精度変換。月10枚まで無料。",
+  openGraph: {
+    title: "WordからLaTeX変換 | かんたんTeX",
+    description: "Word（.docx）ファイルをLaTeXに変換する方法を解説。PDF経由で数式・日本語テキストを高精度変換。",
+    url: "/word_convert",
+  },
+  alternates: { canonical: "/word_convert" },
 };
 
 export default function WordConvertLayout({ children }: { children: React.ReactNode }) {

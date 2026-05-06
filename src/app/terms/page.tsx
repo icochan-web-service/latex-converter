@@ -1,5 +1,17 @@
+import type { Metadata } from "next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+
+export const metadata: Metadata = {
+  title: "利用規約",
+  description: "かんたんTeXの利用規約。料金プラン・禁止事項・免責事項について記載しています。",
+  openGraph: {
+    title: "利用規約 | かんたんTeX",
+    description: "かんたんTeXの利用規約。料金プラン・禁止事項・免責事項について記載しています。",
+    url: "/terms",
+  },
+  alternates: { canonical: "/terms" },
+};
 
 export default function Terms() {
   return (

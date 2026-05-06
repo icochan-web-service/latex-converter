@@ -2,32 +2,40 @@ import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
 import { jaJP } from "@clerk/localizations";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
+import JsonLd from "@/components/JsonLd";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "かんたんTeX",
-  description: "日本語対応のオンラインLaTeXツール",
+  metadataBase: new URL("https://latex.viztechlab.com"),
+  title: {
+    default: "かんたんTeX | 日本語対応オンラインLaTeXツール",
+    template: "%s | かんたんTeX",
+  },
+  description: "画像・PDF・WordをLaTeXコードに変換。数式・日本語テキスト混在対応。月10枚まで無料のオンラインツール。",
   icons: {
     icon: "/logo.svg",
     apple: "/logo.png",
   },
   verification: {
-    google: "d3wZfJwgNyLQ5GH7bSzaOE318xYWHimTOt2TbWnpUZ8", // ← 追加
+    google: "d3wZfJwgNyLQ5GH7bSzaOE318xYWHimTOt2TbWnpUZ8",
+  },
+  alternates: {
+    canonical: "/",
   },
   openGraph: {
-    title: "かんたんTeX",
-    description: "日本語対応のオンラインLaTeXツール",
-    url: "https://latex.viztechlab.com",
+    title: "かんたんTeX | 日本語対応オンラインLaTeXツール",
+    description: "画像・PDF・WordをLaTeXコードに変換。数式・日本語テキスト混在対応。月10枚まで無料。",
+    url: "/",
     siteName: "かんたんTeX",
-    images: [{ url: "https://latex.viztechlab.com/logo.png", width: 512, height: 512 }],
+    images: [{ url: "/logo.png", width: 512, height: 512 }],
     locale: "ja_JP",
     type: "website",
   },
   twitter: {
     card: "summary",
-    title: "かんたんTeX",
-    description: "日本語対応のオンラインLaTeXツール",
-    images: ["https://latex.viztechlab.com/logo.png"],
+    title: "かんたんTeX | 日本語対応オンラインLaTeXツール",
+    description: "画像・PDF・WordをLaTeXコードに変換。数式・日本語テキスト混在対応。月10枚まで無料。",
+    images: ["/logo.png"],
   },
 };
 
@@ -46,6 +54,7 @@ export default function RootLayout({
           />
         </head>
         <body>
+          <JsonLd />
           <GoogleAnalytics />
           {children}
         </body>
