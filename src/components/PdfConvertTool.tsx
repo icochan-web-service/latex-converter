@@ -380,10 +380,12 @@ export default function PdfConvertTool({ redirectUrl = "/pdf_convert" }: Props) 
                   }`,
                 }}
               >
-                {status === "success"    ? "✓" :
-                 status === "failed"     ? "✕" :
-                 status === "converting" ? "…" : "○"}
-                {" "}P{index + 1}
+                <div style={{ fontWeight: "600", marginBottom: "2px" }}>P.{index + 1}</div>
+                <div>
+                  {status === "success"    ? "✓ 完了" :
+                   status === "failed"     ? "✕ 失敗" :
+                   status === "converting" ? "変換中" : "待機中"}
+                </div>
               </div>
             ))}
           </div>
