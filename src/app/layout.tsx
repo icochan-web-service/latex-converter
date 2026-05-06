@@ -10,6 +10,9 @@ export const metadata: Metadata = {
     icon: "/logo.svg",
     apple: "/logo.png",
   },
+  verification: {
+    google: "d3wZfJwgNyLQ5GH7bSzaOE318xYWHimTOt2TbWnpUZ8", // ← 追加
+  },
   openGraph: {
     title: "かんたんTeX",
     description: "日本語対応のオンラインLaTeXツール",
