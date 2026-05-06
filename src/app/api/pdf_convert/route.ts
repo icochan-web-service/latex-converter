@@ -7,7 +7,8 @@ import { PDFDocument } from "pdf-lib";
 // Fluid Compute有効時のデフォルト300秒が適用されるが念のため明示
 export const maxDuration = 300;
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+const PRIMARY_MODEL = "gemini-2.5-flash";
+const FALLBACK_MODEL = "gemini-2.5-flash-lite"; // 503時のフォールバック
 
 function getSupabase() {
   return createClient(
@@ -46,13 +47,18 @@ const PREAMBLE = `\\documentclass[a4paper]{jsarticle}
 \\usepackage{bm}
 \\begin{document}`;
 
-async function callGeminiPage(base64: string): Promise<string> {
-  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-  const result = await model.generateContent([
+async function callGemini(
+  base64: string,
+  mimeType: string,
+  model: string
+): Promise<string> {
+  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+  const geminiModel = genAI.getGenerativeModel({ model });
+  const result = await geminiModel.generateContent([
     SYSTEM_PROMPT_SIMPLE,
     {
       inlineData: {
-        mimeType: "application/pdf",
+        mimeType: mimeType as "application/pdf",
         data: base64,
       },
     },
@@ -62,31 +68,55 @@ async function callGeminiPage(base64: string): Promise<string> {
 
 async function callGeminiWithRetry(
   base64: string,
-  maxRetries: number = 3
+  mimeType: string,
+  model: string,
+  maxRetries: number
 ): Promise<string> {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      return await callGeminiPage(base64);
+      return await callGemini(base64, mimeType, model);
     } catch (err: unknown) {
       const status = (err as { status?: number })?.status;
 
-      // レート制限・一時的なサーバーエラーの場合は待機してリトライ
       if ((status === 429 || status === 503) && attempt < maxRetries) {
-        const waitMs = status === 503
-          ? attempt * 3000  // 503は3秒・6秒・9秒
-          : attempt * 2000; // 429は2秒・4秒・6秒
+        const baseWait = status === 503 ? 5000 : 3000;
+        const jitter = Math.random() * 1000;
+        const waitMs = baseWait * attempt + jitter;
         console.warn(
-          `[api/pdf_convert] ${status}エラー。${waitMs}ms後にリトライ`,
-          `(${attempt}/${maxRetries})`
+          `[api/pdf_convert] ${model} ${status}エラー。`,
+          `${Math.round(waitMs)}ms後にリトライ (${attempt}/${maxRetries})`
         );
-        await new Promise((resolve) => setTimeout(resolve, waitMs));
+        await new Promise((r) => setTimeout(r, waitMs));
         continue;
       }
 
       throw err;
     }
   }
-  throw new Error("最大リトライ回数を超えました");
+  throw new Error(`${model}: 最大リトライ回数超過`);
+}
+
+async function callGeminiWithFallback(
+  base64: string,
+  mimeType: string
+): Promise<string> {
+  // まずプライマリモデルで試行（リトライ2回）
+  try {
+    return await callGeminiWithRetry(base64, mimeType, PRIMARY_MODEL, 2);
+  } catch (primaryErr: unknown) {
+    const status = (primaryErr as { status?: number })?.status;
+
+    // 503の場合のみフォールバック
+    if (status === 503) {
+      console.warn(
+        "[api/pdf_convert] プライマリモデル503。",
+        `${FALLBACK_MODEL}にフォールバックします`
+      );
+      return await callGeminiWithRetry(base64, mimeType, FALLBACK_MODEL, 3);
+    }
+
+    throw primaryErr;
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -217,14 +247,17 @@ export async function POST(req: NextRequest) {
         for (let i = 0; i < pageBase64Array.length; i++) {
           // 2ページ目以降は待機してからリクエスト（レート制限対策）
           if (i > 0) {
-            await new Promise((resolve) => setTimeout(resolve, 1000));
+            await new Promise((r) => setTimeout(r, 1000));
           }
 
           // 変換中イベント
           send({ type: "progress", page: i + 1, status: "converting" });
 
           try {
-            const text = await callGeminiWithRetry(pageBase64Array[i]);
+            const text = await callGeminiWithFallback(
+              pageBase64Array[i],
+              "application/pdf"
+            );
             pageResults.push(`% ===== ページ ${i + 1} =====\n${text}`);
             successCount++;
             send({ type: "progress", page: i + 1, status: "success" });

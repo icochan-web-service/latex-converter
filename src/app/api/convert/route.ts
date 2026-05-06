@@ -3,7 +3,83 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { createClient } from "@supabase/supabase-js";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+const PRIMARY_MODEL = "gemini-2.5-flash";
+const FALLBACK_MODEL = "gemini-2.5-flash-lite"; // 503時のフォールバック
+
+async function callGemini(
+  base64: string,
+  mimeType: string,
+  model: string,
+  prompt: string
+): Promise<string> {
+  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+  const geminiModel = genAI.getGenerativeModel({ model });
+  const result = await geminiModel.generateContent([
+    prompt,
+    {
+      inlineData: {
+        mimeType: mimeType as "image/jpeg" | "image/png" | "image/webp" | "image/gif",
+        data: base64,
+      },
+    },
+  ]);
+  return result.response.text().trim();
+}
+
+async function callGeminiWithRetry(
+  base64: string,
+  mimeType: string,
+  model: string,
+  prompt: string,
+  maxRetries: number
+): Promise<string> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await callGemini(base64, mimeType, model, prompt);
+    } catch (err: unknown) {
+      const status = (err as { status?: number })?.status;
+
+      if ((status === 429 || status === 503) && attempt < maxRetries) {
+        const baseWait = status === 503 ? 5000 : 3000;
+        const jitter = Math.random() * 1000;
+        const waitMs = baseWait * attempt + jitter;
+        console.warn(
+          `[api/convert] ${model} ${status}エラー。`,
+          `${Math.round(waitMs)}ms後にリトライ (${attempt}/${maxRetries})`
+        );
+        await new Promise((r) => setTimeout(r, waitMs));
+        continue;
+      }
+
+      throw err;
+    }
+  }
+  throw new Error(`${model}: 最大リトライ回数超過`);
+}
+
+async function callGeminiWithFallback(
+  base64: string,
+  mimeType: string,
+  prompt: string
+): Promise<string> {
+  // まずプライマリモデルで試行（リトライ2回）
+  try {
+    return await callGeminiWithRetry(base64, mimeType, PRIMARY_MODEL, prompt, 2);
+  } catch (primaryErr: unknown) {
+    const status = (primaryErr as { status?: number })?.status;
+
+    // 503の場合のみフォールバック
+    if (status === 503) {
+      console.warn(
+        "[api/convert] プライマリモデル503。",
+        `${FALLBACK_MODEL}にフォールバックします`
+      );
+      return await callGeminiWithRetry(base64, mimeType, FALLBACK_MODEL, prompt, 3);
+    }
+
+    throw primaryErr;
+  }
+}
 
 function getSupabase() {
   return createClient(
@@ -133,19 +209,7 @@ export async function POST(req: NextRequest) {
     const base64 = Buffer.from(bytes).toString("base64");
 
     const systemPrompt = outputMode === "full" ? SYSTEM_PROMPT_FULL : SYSTEM_PROMPT_SIMPLE;
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-
-    const result = await model.generateContent([
-      systemPrompt,
-      {
-        inlineData: {
-          mimeType: mimeType as "image/jpeg" | "image/png" | "image/webp" | "image/gif",
-          data: base64,
-        },
-      },
-    ]);
-
-    const latex = result.response.text().trim();
+    const latex = await callGeminiWithFallback(base64, mimeType, systemPrompt);
 
     return NextResponse.json({ latex, plan, limit });
 
