@@ -97,25 +97,35 @@ const PLAN_LIMITS: Record<string, number> = {
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
 const SYSTEM_PROMPT_SIMPLE = `あなたは数式OCRの専門家です。
-画像に含まれる数式・テキストをLaTeXに変換してください。
+画像（またはPDFページ）に含まれる数式・テキストをLaTeXに変換してください。
 
 ルール：
 - 文中数式は$と$で囲む
 - 別立て数式は必ずalign*環境を使う（$$や\\[\\]は使わない）
 - 日本語テキストはそのまま地の文として出力する
 - ∴ ∵ などの記号はそのまま使う
-- \\documentclass や \\begin{document} などのプリアンブルは出力しない
-- コードブロックや説明文は不要、LaTeXコードだけを返す
-- section*, subsection*, subsubsection*で構造を表現する`;
+- section*, subsection*, subsubsection*で構造を表現する
+- 空欄・□・(ア)(イ)などの穴埋め箇所は\\boxed{\\text{(ア)}}のように空欄のまま出力し、解答を補完しない
+- 画像に存在しない内容を補完・追加しない
+
+【絶対に出力してはいけないもの】
+- \\documentclass・\\usepackage・\\begin{document}・\\end{document} などのプリアンブル
+- \`\`\`latex や \`\`\` などのコードブロック記号
+- 「以下がLaTeXコードです」などの説明文・前置き・後書き
+- 出力はLaTeXの本文コードのみとする`;
+
 
 const SYSTEM_PROMPT_FULL = `あなたは数式OCRの専門家です。
-画像に含まれる数式・テキストをLaTeXに変換してください。
+画像（またはPDFページ）に含まれる数式・テキストをLaTeXに変換してください。
 
 ルール：
 - 文中数式は$と$で囲む
 - 別立て数式は必ずalign*環境を使う（$$や\\[\\]は使わない）
 - 日本語テキストはそのまま地の文として出力する
 - ∴ ∵ などの記号はそのまま使う
+- section*, subsection*, subsubsection*で構造を表現する
+- 空欄・□・(ア)(イ)などの穴埋め箇所は\\boxed{\\text{(ア)}}のように空欄のまま出力し、解答を補完しない
+- 画像に存在しない内容を補完・追加しない
 - 以下のプリアンブルを含む完全な形式で出力する：
 
 \\documentclass[a4paper]{jsarticle}
@@ -128,8 +138,12 @@ const SYSTEM_PROMPT_FULL = `あなたは数式OCRの専門家です。
 
 \\end{document}
 
-- コードブロックや説明文は不要、LaTeXコードだけを返す
-- section*, subsection*, subsubsection*で構造を表現する`;
+【絶対に出力してはいけないもの】
+- \`\`\`latex や \`\`\` などのコードブロック記号
+- 「以下がLaTeXコードです」などの説明文・前置き・後書き
+- 出力はLaTeXコードのみとする`;
+
+
 
 export async function POST(req: NextRequest) {
   try {
