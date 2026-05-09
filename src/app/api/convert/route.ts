@@ -184,8 +184,7 @@ const STRICT_RULES = `
 ■ 図・グラフのルール
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ✅ \\includegraphics は使わない
-✅ 単純な図（直線・矢印・円・四角）はtikzpictureで再現してよい
-✅ それ以外は以下の形式で日本語説明を出力する：
+✅ 必ず以下の形式で日本語説明を出力する：
 
 \\begin{figure}[h]
 \\centering
