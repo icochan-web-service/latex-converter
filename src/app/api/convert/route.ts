@@ -184,6 +184,7 @@ const STRICT_RULES = `
 ■ 図・グラフのルール
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ✅ \\includegraphics は使わない
+✅ \\tikzpicture は使わない
 ✅ 必ず以下の形式で日本語説明を出力する：
 
 \\begin{figure}[h]
@@ -200,6 +201,7 @@ const STRICT_RULES = `
 □ 行列に重複行・文字と数字の取り違えがないか？
 □ 小問テキストがalign*の中に入っていないか？
 □ \\includegraphicsを使っていないか？
+□ \\tikzpictureを使っていないか？
 □ 画像にない内容を追加していないか？`;
 
 
@@ -228,7 +230,6 @@ ${STRICT_RULES}
 \\usepackage{amssymb}
 \\usepackage{bm}
 \\usepackage{graphicx}
-\\usepackage{tikz}
 \\begin{document}
 
 （変換した内容）
