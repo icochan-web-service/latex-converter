@@ -46,7 +46,7 @@ const STRICT_RULES = `
 ❌ \`\`\`latex や \`\`\`（コードブロック）
 ❌ 「以下がLaTeXです」などの説明・前置き・後書き
 ❌ 画像に存在しない計算過程・解答・補足
-❌ $$..$$ （別立て数式はalign*環境のみ）
+❌ $$...$$ や \\[...\\]（別立て数式はalign*環境のみ）
 ❌ \\begin{tikzpicture}（図はコメントで日本語説明のみ）
 ❌ \\includegraphics（図はコメントで日本語説明のみ）
 
@@ -72,10 +72,23 @@ const STRICT_RULES = `
 ✅ \\int_{-\\infty}^{\\infty} \\int_{-\\infty}^{\\infty}
 （∞は数字ではなく\\inftyで出力する）
 
+【NG例5：分数指数の分母・符号の欠落】
+❌ \\omega = e^{2\\pi i}
+✅ \\omega = e^{-\\frac{2\\pi i}{4}}
+（指数が分数の場合、分子・分母・符号をすべて正確に読み取る）
+（e^{-2πi/4} の /4 を省略しない）
+
+【NG例6：和の上限・係数の同時誤り】
+❌ \\sum_{j=1}^{N-1} \\frac{j}{N^2} \\log_e\\left(1+\\frac{j-1}{N}\\right)
+✅ \\sum_{j=1}^{N} \\frac{j-1}{N^2} \\log_e\\left(1+\\frac{j-1}{N}\\right)
+（上限Nと係数(j-1)を正確に読む。上限をN-1に減らさない）
+
 数式を書くたびに確認：
 □ マイナスが抜けていないか
 □ 分子・分母・指数の係数が正確か
 □ ∞が数字に化けていないか
+□ 分数指数の分母が欠落していないか
+□ 和の上限・係数が正確か
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ■ 行列の正確な読み取り
@@ -85,17 +98,24 @@ const STRICT_RULES = `
 【NG例1：文字と数字の誤認識】
 ❌ \\begin{pmatrix} 3 & b & 1 \\\\ 6 & 3 & 1 \\\\ 1 & 1 & 4 \\end{pmatrix}
 ✅ \\begin{pmatrix} 3 & b & 1 \\\\ b & 3 & 1 \\\\ 1 & 1 & 4 \\end{pmatrix}
-（bと6を取り違えない）
+（bと6を取り違えない。対称行列では同じ文字が対角対称位置に現れる）
 
 【NG例2：同一行の重複】
 ❌ \\begin{pmatrix} 1 & 0 & 0 & 0 \\\\ 1 & 0 & 0 & 0 \\\\ ...
 （同じ行が2つ並んでいたら読み直す）
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+■ 問題構造の正確な読み取り
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ 小問の番号体系（Q.3(4)など）を正確に再現する
+✅ ある問の一部として書かれている内容を独立した問にしない
+✅ 問題の階層（問→小問→小々問）をsection*/subsection*/subsubsection*で表現する
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ■ 2段組・横長レイアウトの読み取り
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ✅ 左カラムを最後まで読み切ってから右カラムへ
-✅ カラム境界付近の記号（特にマイナス・∞）を見落とさない
+✅ カラム境界付近の記号（特にマイナス・∞・分数）を見落とさない
 ✅ ページ番号・ヘッダー・フッターは出力しない
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -103,6 +123,7 @@ const STRICT_RULES = `
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ✅ 文中数式：$...$
 ✅ 別立て数式：\\begin{align*}...\\end{align*} のみ
+   （$$...$$ も \\[...\\] も使わない）
 ✅ 小問の説明文（(1)〜など）はalign*環境の外に出す
 ✅ section*, subsection*, subsubsection* で構造を表現
 ✅ バックスラッシュ（\\）を省略しない
@@ -114,7 +135,7 @@ const STRICT_RULES = `
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ■ 図・グラフのルール
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-図・グラフ・ダイアグラムが含まれる場合、必ず以下の形式のみを使う：
+図・グラフが含まれる場合、必ず以下の形式のみを使う：
 
 \\begin{figure}[h]
 \\centering
@@ -128,11 +149,14 @@ tikzpictureもincludegraphicsも使わない。コメント説明のみ。
 ■ 出力前の自己チェック（必須）
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 □ \\documentclass や \`\`\` が含まれていないか？
-□ マイナス・∞・係数の見落としがないか？
+□ マイナス・∞・係数・分数指数の見落としがないか？
+□ 和の上限・係数が正確か（N-1にしていないか）？
 □ 行列に重複行・文字と数字の取り違えがないか？
 □ 小問テキストがalign*の中に入っていないか？
+□ $$や\\[\\]ではなくalign*を使っているか？
 □ \\begin{tikzpicture} を使っていないか？
 □ \\includegraphics を使っていないか？
+□ 問題構造（Q.3(4)など）を正確に再現しているか？
 □ 画像にない内容を追加していないか？`;
 
 const SYSTEM_PROMPT_SIMPLE = `あなたは数式OCRの専門家です。
@@ -152,15 +176,36 @@ const PREAMBLE = `\\documentclass[a4paper]{jsarticle}
 \\usepackage{graphicx}
 \\begin{document}`;
 
+const SYSTEM_PROMPT_FULL = `あなたは数式OCRの専門家です。
+画像（またはPDFページ）に含まれる数式・テキストをLaTeXに変換してください。
+
+${STRICT_RULES}
+
+【出力形式】
+以下のプリアンブルから始まる完全なLaTeXファイルを出力する。
+プリアンブルより前に何も出力しないこと。
+
+\\documentclass[a4paper]{jsarticle}
+\\usepackage{amsmath}
+\\usepackage{amssymb}
+\\usepackage{bm}
+\\usepackage{graphicx}
+\\begin{document}
+
+（変換した内容）
+
+\\end{document}`;
+
 async function callGemini(
   base64: string,
   mimeType: string,
-  model: string
+  model: string,
+  prompt: string
 ): Promise<string> {
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
   const geminiModel = genAI.getGenerativeModel({ model });
   const result = await geminiModel.generateContent([
-    SYSTEM_PROMPT_SIMPLE,
+    prompt,
     {
       inlineData: {
         mimeType: mimeType as "application/pdf",
@@ -175,11 +220,12 @@ async function callGeminiWithRetry(
   base64: string,
   mimeType: string,
   model: string,
+  prompt: string,
   maxRetries: number
 ): Promise<string> {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      return await callGemini(base64, mimeType, model);
+      return await callGemini(base64, mimeType, model, prompt);
     } catch (err: unknown) {
       const status = (err as { status?: number })?.status;
 
@@ -203,11 +249,12 @@ async function callGeminiWithRetry(
 
 async function callGeminiWithFallback(
   base64: string,
-  mimeType: string
+  mimeType: string,
+  prompt: string
 ): Promise<string> {
   // まずプライマリモデルで試行（リトライ2回）
   try {
-    return await callGeminiWithRetry(base64, mimeType, PRIMARY_MODEL, 2);
+    return await callGeminiWithRetry(base64, mimeType, PRIMARY_MODEL, prompt, 2);
   } catch (primaryErr: unknown) {
     const status = (primaryErr as { status?: number })?.status;
 
@@ -217,7 +264,7 @@ async function callGeminiWithFallback(
         "[api/pdf_convert] プライマリモデル503。",
         `${FALLBACK_MODEL}にフォールバックします`
       );
-      return await callGeminiWithRetry(base64, mimeType, FALLBACK_MODEL, 3);
+      return await callGeminiWithRetry(base64, mimeType, FALLBACK_MODEL, prompt, 3);
     }
 
     throw primaryErr;
@@ -361,7 +408,8 @@ export async function POST(req: NextRequest) {
           try {
             const text = await callGeminiWithFallback(
               pageBase64Array[i],
-              "application/pdf"
+              "application/pdf",
+              SYSTEM_PROMPT_SIMPLE
             );
             pageResults.push(`% ===== ページ ${i + 1} =====\n${text}`);
             successCount++;
