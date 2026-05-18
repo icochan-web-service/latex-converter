@@ -4,6 +4,10 @@ import Footer from "@/components/Footer";
 export const metadata = {
   title: "特定商取引法に基づく表記",
   description: "かんたんTeXの特定商取引法に基づく表記。販売業者・料金・返金・解約についての情報。",
+  robots: {
+    index: false,
+    follow: false,
+  },
   openGraph: {
     title: "特定商取引法に基づく表記 | かんたんTeX",
     description: "かんたんTeXの特定商取引法に基づく表記。販売業者・料金・返金・解約についての情報。",
@@ -13,9 +17,10 @@ export const metadata = {
 };
 
 const ROWS = [
-  { label: "販売業者",       value: <img src="/tokusho-name.png" alt="" style={{ height: '18px' }} /> },
+  // { label: "販売業者",       value: <img src="/tokusho-name.png" alt="" style={{ height: '18px' }} /> },
+  { label: "販売業者",       value: "寺師 彩俊" },
   { label: "所在地",         value: "請求があれば遅滞なく開示します" },
-  { label: "電話番号",       value: "請求があれば遅滞なく開示します" },
+  { label: "電話番号",       value: "090-6155-9108" },
   { label: "メールアドレス", value: "notebizhack@gmail.com" },
   { label: "サービス名",     value: "かんたんTeX" },
   { label: "サービスURL",    value: "https://latex.viztechlab.com" },
