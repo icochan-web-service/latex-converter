@@ -19,6 +19,24 @@ export default function LandingPage() {
     toast.info("近日公開です。お楽しみに！");
   };
 
+  const handleBasicPlan = async () => {
+    if (!isSignedIn) {
+      openSignIn({ fallbackRedirectUrl: "/account" });
+      return;
+    }
+    try {
+      const res = await fetch("/api/checkout", { method: "POST" });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        toast.error(data.error ?? "決済ページへの移動に失敗しました");
+      }
+    } catch {
+      toast.error("エラーが発生しました。再度お試しください。");
+    }
+  };
+
   return (
     <div
       style={{
@@ -479,7 +497,7 @@ export default function LandingPage() {
                 <li>✓ 優先サポート</li>
               </ul>
               <button
-                onClick={() => openSignIn({ fallbackRedirectUrl: "/convert" })}
+                onClick={handleBasicPlan}
                 style={{
                   width: "100%",
                   background: "#0017C1",

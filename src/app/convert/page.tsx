@@ -57,7 +57,12 @@ export default function ConvertPage() {
       form.append("outputMode", outputMode);
       const res = await fetch("/api/convert", { method: "POST", body: form });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+      if (!res.ok) {
+        if (res.status === 429) {
+          fetch("/api/usage").then((r) => r.json()).then(setUsage);
+        }
+        throw new Error(data.error);
+      }
       setLatex(data.latex);
       fetch("/api/usage")
         .then((r) => r.json())
